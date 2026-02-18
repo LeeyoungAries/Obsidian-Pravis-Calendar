@@ -63,7 +63,7 @@ export class CalendarView extends ItemView {
   }
 
   private openEventModal(mode: "create" | "edit", initialDate?: Date, event?: Parameters<typeof EventModal>[2]["event"]): void {
-    const modal = new EventModal(this.app, this.eventStore, { mode, initialDate, event });
+    const modal = new EventModal(this.app, this.eventStore, this.calendarStore, { mode, initialDate, event });
     modal.afterClose = () => this.render();
     modal.open();
   }
@@ -102,6 +102,19 @@ export class CalendarView extends ItemView {
 
     const createBtn = toolbar.createEl("button", { text: "创建事件" });
     createBtn.addEventListener("click", () => this.openEventModal("create", this.currentDate));
+
+    const calFilter = toolbar.createDiv("calendar-filter");
+    this.calendarStore.getCalendars().forEach((cal) => {
+      const btn = calFilter.createEl("button");
+      btn.style.borderLeft = `3px solid ${cal.color}`;
+      btn.style.paddingLeft = "0.5rem";
+      btn.setText(cal.name);
+      if (!cal.visible) btn.addClass("calendar-filter-hidden");
+      btn.addEventListener("click", () => {
+        this.calendarStore.toggleVisible(cal.id);
+        this.render();
+      });
+    });
 
     this.updateNavTitle(navTitle);
 
@@ -166,6 +179,14 @@ export class CalendarView extends ItemView {
     } else {
       this.currentDate = addDays(this.currentDate, delta);
     }
+    this.render();
+  }
+
+  navigateToEvent(eventId: string): void {
+    const ev = this.eventStore.getEvent(eventId);
+    if (!ev) return;
+    this.currentDate = new Date(ev.start);
+    this.viewMode = "day";
     this.render();
   }
 

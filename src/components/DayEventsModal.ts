@@ -15,6 +15,8 @@ export class DayEventsModal extends Modal {
     const list = contentEl.createDiv("calendar-day-events-list");
     this.events.forEach((e) => {
       const row = list.createDiv("calendar-day-event-row");
+      if (e.type === "todo") row.addClass("calendar-event-todo");
+      if (e.completed) row.addClass("calendar-event-completed");
       row.setText(e.title);
       if (e.allDay) row.createSpan("calendar-event-badge").setText("全天");
       else {

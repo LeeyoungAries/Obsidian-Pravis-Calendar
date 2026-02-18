@@ -15,4 +15,8 @@ export class CalendarStore {
   toggleVisible(id: string): void {
     this.eventStore.toggleVisible(id);
   }
+
+  addCalendar(cal: Omit<Calendar, "id">): Calendar {
+    return this.eventStore.addCalendar(cal);
+  }
 }

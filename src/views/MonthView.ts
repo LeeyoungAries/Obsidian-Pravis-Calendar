@@ -2,6 +2,7 @@ import type { Event } from "../types";
 import type { EventStore } from "../store/EventStore";
 import type { CalendarStore } from "../store/CalendarStore";
 import { getMonthGrid, isSameDay, toDateKey } from "../utils/date";
+import { makeEventDraggable, makeDropTarget } from "../components/EventCard";
 
 const WEEKDAY_NAMES = ["日", "一", "二", "三", "四", "五", "六"];
 
@@ -89,12 +90,41 @@ export class MonthView {
           this.callbacks.onDateClick?.(cellDate);
         });
 
+        makeDropTarget(cell, (eventId) => {
+          const evt = this.eventStore.getEvent(eventId);
+          if (!evt) return;
+          const targetStart = new Date(cellDate);
+          targetStart.setHours(0, 0, 0, 0);
+          const targetEnd = new Date(cellDate);
+          targetEnd.setHours(23, 59, 59, 999);
+          if (evt.allDay) {
+            this.eventStore.updateEvent(eventId, {
+              start: targetStart.toISOString(),
+              end: targetEnd.toISOString(),
+            });
+          } else {
+            const origStart = new Date(evt.start);
+            const origEnd = new Date(evt.end);
+            const duration = origEnd.getTime() - origStart.getTime();
+            const newStart = new Date(cellDate);
+            newStart.setHours(origStart.getHours(), origStart.getMinutes(), 0, 0);
+            const newEnd = new Date(newStart.getTime() + duration);
+            this.eventStore.updateEvent(eventId, {
+              start: newStart.toISOString(),
+              end: newEnd.toISOString(),
+            });
+          }
+        });
+
         const dayEvents = eventsByDay.get(toDateKey(cellDate)) ?? [];
         const list = cell.createDiv("calendar-cell-events");
         dayEvents.slice(0, 3).forEach((e) => {
           const chip = list.createDiv("calendar-event-chip");
+          if (e.type === "todo") chip.addClass("calendar-event-todo");
+          if (e.completed) chip.addClass("calendar-event-completed");
           chip.setText(e.title);
           chip.style.borderLeftColor = this.calendarStore.getCalendars().find((c) => c.id === e.calendarId)?.color ?? "#007AFF";
+          makeEventDraggable(chip, e);
           chip.addEventListener("click", (ev) => {
             ev.stopPropagation();
             this.callbacks.onEventClick?.(e);

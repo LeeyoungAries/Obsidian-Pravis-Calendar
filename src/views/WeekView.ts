@@ -2,6 +2,7 @@ import type { Event } from "../types";
 import type { EventStore } from "../store/EventStore";
 import type { CalendarStore } from "../store/CalendarStore";
 import { getWeekDays, isSameDay } from "../utils/date";
+import { makeEventDraggable, makeDropTarget } from "../components/EventCard";
 
 const SLOT_HEIGHT = 48;
 const HOURS = 24;
@@ -60,19 +61,46 @@ export class WeekView {
       const allDaySection = wrapper.createDiv("calendar-week-allday");
       allDaySection.createDiv("calendar-week-allday-label").setText("全天");
       const allDayGrid = allDaySection.createDiv("calendar-week-allday-grid");
-      days.forEach((d) => {
+      days.forEach((dayDate) => {
         const col = allDayGrid.createDiv("calendar-week-allday-col");
+        makeDropTarget(col, (eventId) => {
+          const evt = this.eventStore.getEvent(eventId);
+          if (!evt) return;
+          const targetStart = new Date(dayDate);
+          targetStart.setHours(0, 0, 0, 0);
+          const targetEnd = new Date(dayDate);
+          targetEnd.setHours(23, 59, 59, 999);
+          if (evt.allDay) {
+            this.eventStore.updateEvent(eventId, {
+              start: targetStart.toISOString(),
+              end: targetEnd.toISOString(),
+            });
+          } else {
+            const origStart = new Date(evt.start);
+            const duration = new Date(evt.end).getTime() - new Date(evt.start).getTime();
+            const newStart = new Date(dayDate);
+            newStart.setHours(origStart.getHours(), origStart.getMinutes(), 0, 0);
+            const newEnd = new Date(newStart.getTime() + duration);
+            this.eventStore.updateEvent(eventId, {
+              start: newStart.toISOString(),
+              end: newEnd.toISOString(),
+            });
+          }
+        });
         const dayEvents = allDayEvents.filter((e) => {
           const start = new Date(e.start);
           start.setHours(0, 0, 0, 0);
           const end = new Date(e.end);
           end.setHours(23, 59, 59, 999);
-          return d >= start && d <= end;
+          return dayDate >= start && dayDate <= end;
         });
         dayEvents.forEach((e) => {
           const chip = col.createDiv("calendar-week-event-chip");
+          if (e.type === "todo") chip.addClass("calendar-event-todo");
+          if (e.completed) chip.addClass("calendar-event-completed");
           chip.setText(e.title);
           chip.style.borderLeftColor = this.calendarStore.getCalendars().find((c) => c.id === e.calendarId)?.color ?? "#007AFF";
+          makeEventDraggable(chip, e);
           chip.addEventListener("click", () => this.callbacks.onEventClick?.(e));
         });
       });
@@ -100,10 +128,24 @@ export class WeekView {
       for (let h = 0; h < HOURS; h++) {
         const slot = slots.createDiv("calendar-week-cell");
         slot.style.height = `${SLOT_HEIGHT}px`;
+        const hour = h;
+        makeDropTarget(slot, (eventId) => {
+          const evt = this.eventStore.getEvent(eventId);
+          if (!evt) return;
+          const newStart = new Date(dayDate);
+          newStart.setHours(hour, 0, 0, 0);
+          const duration = new Date(evt.end).getTime() - new Date(evt.start).getTime();
+          const newEnd = new Date(newStart.getTime() + duration);
+          this.eventStore.updateEvent(eventId, {
+            start: newStart.toISOString(),
+            end: newEnd.toISOString(),
+            allDay: false,
+          });
+        });
         slot.addEventListener("click", () => {
           const d = new Date(dayDate);
-          d.setHours(h, 0, 0, 0);
-          this.callbacks.onSlotClick?.(d, h);
+          d.setHours(hour, 0, 0, 0);
+          this.callbacks.onSlotClick?.(d, hour);
         });
       }
 
@@ -118,9 +160,12 @@ export class WeekView {
         const heightPx = Math.max(durationHours * SLOT_HEIGHT, 20);
 
         const bar = eventsLayer.createDiv("calendar-week-event-bar");
+        if (e.type === "todo") bar.addClass("calendar-event-todo");
+        if (e.completed) bar.addClass("calendar-event-completed");
         bar.style.top = `${topPx}px`;
         bar.style.height = `${heightPx}px`;
         bar.style.borderLeftColor = this.calendarStore.getCalendars().find((c) => c.id === e.calendarId)?.color ?? "#007AFF";
+        makeEventDraggable(bar, e);
         bar.createDiv("calendar-week-event-bar-title").setText(e.title);
         bar.addEventListener("click", (ev) => {
           ev.stopPropagation();

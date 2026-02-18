@@ -1,6 +1,8 @@
 import { Modal, App } from "obsidian";
 import type { EventStore } from "../store/EventStore";
+import type { CalendarStore } from "../store/CalendarStore";
 import type { Event } from "../types";
+import { NoteSuggestModal } from "./NoteSuggestModal";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -20,6 +22,7 @@ export class EventModal extends Modal {
   constructor(
     app: App,
     private eventStore: EventStore,
+    private calendarStore: CalendarStore,
     private options: EventModalOptions
   ) {
     super(app);
@@ -73,12 +76,73 @@ export class EventModal extends Modal {
     endTimeInput.value = ev ? new Date(ev.end).toTimeString().slice(0, 5) : defaultEnd.toTimeString().slice(0, 5);
     endRow.style.marginBottom = "0.5rem";
 
+    form.createEl("label", { text: "日历" }).style.display = "block";
+    const calendarSelect = form.createEl("select");
+    const calendars = this.calendarStore.getCalendars();
+    const eventCalId = ev?.calendarId ?? "cal_default";
+    const hasEventCal = calendars.some((c) => c.id === eventCalId);
+    calendars.forEach((c) => {
+      const opt = calendarSelect.createEl("option", { value: c.id, text: c.name });
+      if (eventCalId === c.id) opt.selected = true;
+    });
+    if (!hasEventCal && eventCalId) {
+      const opt = calendarSelect.createEl("option", { value: eventCalId, text: eventCalId });
+      opt.selected = true;
+    }
+    calendarSelect.style.width = "100%";
+    calendarSelect.style.marginBottom = "0.5rem";
+
+    form.createEl("label", { text: "关联笔记" }).style.display = "block";
+    const noteRow = form.createDiv("calendar-form-row");
+    noteRow.style.marginBottom = "0.5rem";
+    noteRow.style.display = "flex";
+    noteRow.style.gap = "0.5rem";
+    const noteInput = noteRow.createEl("input", { type: "text" });
+    noteInput.placeholder = "选择笔记";
+    noteInput.value = ev?.notePath ?? "";
+    noteInput.style.flex = "1";
+    const noteBtn = noteRow.createEl("button", { text: "选择" });
+    noteBtn.addEventListener("click", () => {
+      const files = this.app.vault.getMarkdownFiles();
+      new NoteSuggestModal(this.app, files, (file) => {
+        noteInput.value = file.path;
+      }).open();
+    });
+    const noteClearBtn = noteRow.createEl("button", { text: "清除" });
+    noteClearBtn.addEventListener("click", () => { noteInput.value = ""; });
+    if (ev?.notePath?.trim()) {
+      const openNoteBtn = noteRow.createEl("button", { text: "打开" });
+      openNoteBtn.addEventListener("click", () => {
+        const file = this.app.vault.getAbstractFileByPath(ev!.notePath);
+        if (file) this.app.workspace.getLeaf().openFile(file);
+      });
+    }
+
     form.createEl("label", { text: "地点" }).style.display = "block";
     const locationInput = form.createEl("input", { type: "text" });
     locationInput.placeholder = "地点";
     locationInput.value = ev?.location ?? "";
     locationInput.style.width = "100%";
     locationInput.style.marginBottom = "0.5rem";
+
+    form.createEl("label", { text: "类型" }).style.display = "block";
+    const typeSelect = form.createEl("select");
+    typeSelect.createEl("option", { value: "event", text: "事件" });
+    typeSelect.createEl("option", { value: "todo", text: "Todo" });
+    typeSelect.value = ev?.type ?? "event";
+    typeSelect.style.width = "100%";
+    typeSelect.style.marginBottom = "0.5rem";
+
+    const completedRow = form.createDiv("calendar-form-row");
+    const completedLabel = completedRow.createEl("label");
+    const completedCheck = completedLabel.createEl("input", { type: "checkbox" });
+    completedCheck.checked = ev?.completed ?? false;
+    completedLabel.appendText(" 已完成");
+    completedRow.style.marginBottom = "0.5rem";
+    completedRow.style.display = (ev?.type ?? "event") === "todo" ? "block" : "none";
+    typeSelect.addEventListener("change", () => {
+      completedRow.style.display = typeSelect.value === "todo" ? "block" : "none";
+    });
 
     form.createEl("label", { text: "备注" }).style.display = "block";
     const notesInput = form.createEl("textarea");
@@ -103,31 +167,39 @@ export class EventModal extends Modal {
       const title = titleInput.value.trim();
       if (!title) return;
       const allDay = allDayCheck.checked;
-      let start: string;
-      let end: string;
+      let start: Date;
+      let end: Date;
       if (allDay) {
-        start = new Date(startDateInput.value + "T00:00:00").toISOString();
-        end = new Date(endDateInput.value + "T23:59:59").toISOString();
+        start = new Date(startDateInput.value + "T00:00:00");
+        end = new Date(endDateInput.value + "T23:59:59");
       } else {
-        start = new Date(startDateInput.value + "T" + startTimeInput.value).toISOString();
-        end = new Date(endDateInput.value + "T" + endTimeInput.value).toISOString();
+        start = new Date(startDateInput.value + "T" + startTimeInput.value);
+        end = new Date(endDateInput.value + "T" + endTimeInput.value);
       }
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) return;
+      if (end < start) [start, end] = [end, start];
+      const startStr = start.toISOString();
+      const endStr = end.toISOString();
       const location = locationInput.value.trim();
       const notes = notesInput.value.trim();
+      const calendarId = calendarSelect.value;
+      const notePath = noteInput.value.trim();
+      const type = typeSelect.value as "event" | "todo";
+      const completed = type === "todo" ? completedCheck.checked : false;
       if (isEdit && ev) {
-        this.eventStore.updateEvent(ev.id, { title, start, end, allDay, location, notes });
+        this.eventStore.updateEvent(ev.id, { title, start: startStr, end: endStr, allDay, location, notes, calendarId, notePath, type, completed });
       } else {
         this.eventStore.addEvent({
           title,
-          start,
-          end,
+          start: startStr,
+          end: endStr,
           allDay,
           location,
           notes,
-          calendarId: "cal_default",
-          notePath: "",
-          type: "event",
-          completed: false,
+          calendarId,
+          notePath,
+          type,
+          completed,
         });
       }
       this.close();

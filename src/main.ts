@@ -4,6 +4,7 @@ import { EventStore } from "./store/EventStore";
 import { CalendarStore } from "./store/CalendarStore";
 import { CalendarView, VIEW_TYPE_CALENDAR } from "./views/CalendarView";
 import { CalendarSettingTab } from "./settings";
+import { createEventLinkProcessor } from "./eventLinkProcessor";
 
 const DEFAULT_SETTINGS: PluginSettings = {
   weekStartDay: 0,
@@ -36,22 +37,32 @@ export default class CalendarPlugin extends Plugin {
     });
 
     this.addSettingTab(
-      new CalendarSettingTab(this.app, this, () => this.settings, (s) => this.saveSettings(s))
+      new CalendarSettingTab(this.app, this, this.calendarStore, () => this.settings, (s) => this.saveSettings(s))
     );
+
+    this.registerMarkdownPostProcessor(
+      createEventLinkProcessor((eventId) => this.openCalendarToEvent(eventId))
+    );
+  }
+
+  private async openCalendarToEvent(eventId: string): Promise<void> {
+    await this.activateView();
+    const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_CALENDAR)[0];
+    if (leaf?.view instanceof CalendarView) {
+      (leaf.view as CalendarView).navigateToEvent(eventId);
+    }
   }
 
   onunload(): void {
     this.app.workspace.detachLeavesOfType(VIEW_TYPE_CALENDAR);
   }
 
-  private async activateView(): Promise<void> {
+  async activateView(): Promise<void> {
     const { workspace } = this.app;
     let leaf = workspace.getLeavesOfType(VIEW_TYPE_CALENDAR)[0];
     if (!leaf) {
-      await workspace.getRightLeaf(false)?.setViewState({
-        type: VIEW_TYPE_CALENDAR,
-        active: true,
-      });
+      const target = workspace.getRightLeaf(false) ?? workspace.getLeaf();
+      await target.setViewState({ type: VIEW_TYPE_CALENDAR, active: true });
     } else {
       workspace.revealLeaf(leaf);
     }

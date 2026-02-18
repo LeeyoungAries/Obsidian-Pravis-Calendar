@@ -1,8 +1,15 @@
 import { PluginSettingTab, type App, type Plugin } from "obsidian";
 import type { PluginSettings, ViewMode } from "./types";
+import type { CalendarStore } from "./store/CalendarStore";
 
 export class CalendarSettingTab extends PluginSettingTab {
-  constructor(app: App, private plugin: Plugin, private getSettings: () => PluginSettings, private saveSettings: (s: PluginSettings) => Promise<void>) {
+  constructor(
+    app: App,
+    private plugin: Plugin,
+    private calendarStore: CalendarStore,
+    private getSettings: () => PluginSettings,
+    private saveSettings: (s: PluginSettings) => Promise<void>
+  ) {
     super(app, plugin);
   }
 
@@ -44,6 +51,50 @@ export class CalendarSettingTab extends PluginSettingTab {
     viewSelect.addEventListener("change", async () => {
       const s = { ...this.getSettings(), defaultView: viewSelect.value as ViewMode };
       await this.saveSettings(s);
+    });
+
+    containerEl.createEl("h3", { text: "日历管理" });
+    const calendars = this.calendarStore.getCalendars();
+    calendars.forEach((cal) => {
+      const item = containerEl.createDiv("setting-item");
+      const info = item.createDiv("setting-item-info");
+      info.style.display = "flex";
+      info.style.alignItems = "center";
+      info.style.gap = "0.5rem";
+      const colorInput = info.createEl("input", { type: "color" });
+      colorInput.value = cal.color;
+      colorInput.style.width = "2rem";
+      colorInput.style.height = "1.5rem";
+      colorInput.addEventListener("change", () => {
+        this.calendarStore.updateCalendar(cal.id, { color: colorInput.value });
+      });
+      const nameInput = info.createEl("input", { type: "text" });
+      nameInput.value = cal.name;
+      nameInput.placeholder = "日历名称";
+      nameInput.style.flex = "1";
+      nameInput.addEventListener("change", () => {
+        this.calendarStore.updateCalendar(cal.id, { name: nameInput.value.trim() || cal.name });
+      });
+      const visibleLabel = info.createEl("label");
+      const visibleCheck = visibleLabel.createEl("input", { type: "checkbox" });
+      visibleCheck.checked = cal.visible;
+      visibleCheck.title = "显示/隐藏";
+      visibleCheck.addEventListener("change", () => {
+        this.calendarStore.toggleVisible(cal.id);
+      });
+      visibleLabel.appendText(" 显示");
+    });
+    const addBtn = containerEl.createEl("button", { text: "添加日历" });
+    addBtn.addEventListener("click", () => {
+      const colors = ["#007AFF", "#34C759", "#FF9500", "#FF3B30", "#AF52DE"];
+      const names = ["工作", "个人", "家庭"];
+      const idx = calendars.length % names.length;
+      this.calendarStore.addCalendar({
+        name: names[idx] || "新日历",
+        color: colors[calendars.length % colors.length],
+        visible: true,
+      });
+      this.display();
     });
   }
 }

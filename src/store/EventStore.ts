@@ -1,6 +1,6 @@
 import type { App } from "obsidian";
 import type { Event, Calendar, CalendarData } from "../types";
-import { generateEventId } from "../utils/id";
+import { generateEventId, generateCalendarId } from "../utils/id";
 
 const DATA_PATH = ".obsidian/calendar-events.json";
 const SAVE_DEBOUNCE_MS = 300;
@@ -33,10 +33,9 @@ export class EventStore {
     try {
       const content = await this.app.vault.adapter.read(DATA_PATH);
       const parsed = JSON.parse(content) as Partial<CalendarData>;
-      this.data = {
-        events: parsed.events ?? DEFAULT_DATA.events,
-        calendars: { ...DEFAULT_DATA.calendars, ...parsed.calendars },
-      };
+      const events = (parsed.events ?? DEFAULT_DATA.events).filter((e) => e?.id && e?.start && e?.end);
+      const calendars = { ...DEFAULT_DATA.calendars, ...parsed.calendars };
+      this.data = { events, calendars };
     } catch {
       this.data = { ...DEFAULT_DATA, calendars: { ...DEFAULT_DATA.calendars } };
     }
@@ -53,9 +52,13 @@ export class EventStore {
       clearTimeout(this.saveTimer);
       this.saveTimer = null;
     }
-    const content = JSON.stringify(this.data, null, 2);
-    await this.app.vault.adapter.write(DATA_PATH, content);
-    this.emit();
+    try {
+      const content = JSON.stringify(this.data, null, 2);
+      await this.app.vault.adapter.write(DATA_PATH, content);
+      this.emit();
+    } catch (err) {
+      console.error("Calendar plugin: save failed", err);
+    }
   }
 
   on(ev: "change", handler: ChangeHandler): void {
@@ -125,5 +128,18 @@ export class EventStore {
     cal.visible = !cal.visible;
     this.scheduleSave();
     this.emit();
+  }
+
+  addCalendar(cal: Omit<Calendar, "id">): Calendar {
+    const id = generateCalendarId();
+    const full: Calendar = { ...cal, id };
+    this.data.calendars[id] = full;
+    this.scheduleSave();
+    this.emit();
+    return full;
+  }
+
+  getEvent(id: string): Event | null {
+    return this.data.events.find((e) => e.id === id) ?? null;
   }
 }
