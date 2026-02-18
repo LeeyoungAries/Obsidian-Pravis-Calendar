@@ -1,0 +1,9 @@
+{
+  "id": "obsidian-calendar",
+  "name": "Obsidian Calendar",
+  "version": "0.1.0",
+  "minAppVersion": "1.4.0",
+  "description": "Calendar plugin with day/week/month views, event management, and note linking",
+  "author": "",
+  "isDesktopOnly": false
+}
