@@ -144,3 +144,261 @@
   font-size: 0.8rem;
   color: var(--text-muted);
 }
+
+/* View switcher */
+.calendar-view-group {
+  display: flex;
+  gap: 2px;
+}
+
+.calendar-view-group button.is-active {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+/* Day view */
+.calendar-content-area {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.calendar-day-view,
+.calendar-week-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.calendar-allday-section {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.calendar-allday-label {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  width: 3rem;
+}
+
+.calendar-allday-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.calendar-day-event-chip {
+  font-size: 0.8rem;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border-left: 3px solid var(--interactive-accent);
+  background: var(--background-secondary);
+  cursor: pointer;
+}
+
+.calendar-day-event-chip:hover {
+  background: var(--background-modifier-hover);
+}
+
+.calendar-day-timesection {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.calendar-day-timeaxis {
+  flex-shrink: 0;
+  width: 3rem;
+}
+
+.calendar-day-slot {
+  border-bottom: 1px solid var(--background-modifier-border);
+  cursor: pointer;
+}
+
+.calendar-day-slot:hover {
+  background: var(--background-modifier-hover);
+}
+
+.calendar-day-slot-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.calendar-day-events {
+  flex: 1;
+  position: relative;
+}
+
+.calendar-day-events-inner {
+  position: relative;
+  width: 100%;
+}
+
+.calendar-day-event-bar {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  border-radius: 4px;
+  border-left: 3px solid var(--interactive-accent);
+  background: var(--background-secondary);
+  padding: 4px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.calendar-day-event-bar:hover {
+  background: var(--background-modifier-hover);
+}
+
+.calendar-day-event-bar-title {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.calendar-day-event-bar-time {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* Week view */
+.calendar-week-allday {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.calendar-week-allday-label {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  width: 3rem;
+}
+
+.calendar-week-allday-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  flex: 1;
+  gap: 4px;
+}
+
+.calendar-week-allday-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.calendar-week-event-chip {
+  font-size: 0.75rem;
+  padding: 2px 6px;
+  border-radius: 2px;
+  border-left: 3px solid var(--interactive-accent);
+  background: var(--background-secondary);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-week-event-chip:hover {
+  background: var(--background-modifier-hover);
+}
+
+.calendar-week-timesection {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.calendar-week-timeaxis {
+  flex-shrink: 0;
+  width: 3rem;
+}
+
+.calendar-week-slot {
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.calendar-week-slot-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.calendar-week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  flex: 1;
+  min-width: 0;
+}
+
+.calendar-week-col {
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--background-modifier-border);
+}
+
+.calendar-week-col-header {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  text-align: center;
+  padding: 4px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.calendar-week-col-body {
+  position: relative;
+}
+
+.calendar-week-col-slots {
+  position: relative;
+}
+
+.calendar-week-cell {
+  border-bottom: 1px solid var(--background-modifier-border);
+  cursor: pointer;
+}
+
+.calendar-week-cell:hover {
+  background: var(--background-modifier-hover);
+}
+
+.calendar-week-events {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.calendar-week-events > * {
+  pointer-events: auto;
+}
+
+.calendar-week-event-bar {
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  border-radius: 2px;
+  border-left: 3px solid var(--interactive-accent);
+  background: var(--background-secondary);
+  padding: 2px 4px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.calendar-week-event-bar:hover {
+  background: var(--background-modifier-hover);
+}
+
+.calendar-week-event-bar-title {
+  font-size: 0.7rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

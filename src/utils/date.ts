@@ -29,6 +29,24 @@ export function toDateKey(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+export function startOfWeek(d: Date, weekStartDay: number): Date {
+  const r = new Date(d);
+  r.setHours(0, 0, 0, 0);
+  const dow = r.getDay();
+  const diff = (dow - weekStartDay + 7) % 7;
+  r.setDate(r.getDate() - diff);
+  return r;
+}
+
+export function getWeekDays(d: Date, weekStartDay: number): Date[] {
+  const start = startOfWeek(d, weekStartDay);
+  const days: Date[] = [];
+  for (let i = 0; i < 7; i++) {
+    days.push(addDays(start, i));
+  }
+  return days;
+}
+
 export function getMonthGrid(year: number, month: number, weekStartDay: number): Date[][] {
   const first = new Date(year, month, 1);
   const firstDow = first.getDay();

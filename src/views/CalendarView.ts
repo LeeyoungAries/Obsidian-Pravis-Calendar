@@ -2,10 +2,13 @@ import { ItemView, type WorkspaceLeaf } from "obsidian";
 import type { EventStore } from "../store/EventStore";
 import type { CalendarStore } from "../store/CalendarStore";
 import type { PluginSettings } from "../types";
+import type { ViewMode } from "../types";
 import { MonthView } from "./MonthView";
+import { DayView } from "./DayView";
+import { WeekView } from "./WeekView";
 import { EventModal } from "../components/EventModal";
 import { DayEventsModal } from "../components/DayEventsModal";
-import { addMonths } from "../utils/date";
+import { addMonths, addDays, getWeekDays } from "../utils/date";
 
 const MONTH_NAMES = ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"];
 
@@ -17,7 +20,10 @@ export class CalendarView extends ItemView {
   private settings: PluginSettings;
   private containerEl: HTMLElement;
   private monthView: MonthView | null = null;
+  private dayView: DayView | null = null;
+  private weekView: WeekView | null = null;
   private currentDate: Date;
+  private viewMode: ViewMode;
   private changeHandler = () => this.render();
 
   constructor(
@@ -31,6 +37,7 @@ export class CalendarView extends ItemView {
     this.calendarStore = calendarStore;
     this.settings = settings;
     this.currentDate = new Date();
+    this.viewMode = settings.defaultView;
     this.containerEl = this.contentEl.createDiv("obsidian-calendar-container");
   }
 
@@ -55,81 +62,123 @@ export class CalendarView extends ItemView {
     this.eventStore.off("change", this.changeHandler);
   }
 
+  private openEventModal(mode: "create" | "edit", initialDate?: Date, event?: Parameters<typeof EventModal>[2]["event"]): void {
+    const modal = new EventModal(this.app, this.eventStore, { mode, initialDate, event });
+    modal.afterClose = () => this.render();
+    modal.open();
+  }
+
   private render(): void {
     this.containerEl.empty();
 
     const toolbar = this.containerEl.createDiv("obsidian-calendar-toolbar");
 
+    const viewGroup = toolbar.createDiv("calendar-view-group");
+    (["day", "week", "month"] as ViewMode[]).forEach((mode) => {
+      const btn = viewGroup.createEl("button", {
+        text: mode === "day" ? "日" : mode === "week" ? "周" : "月",
+      });
+      if (this.viewMode === mode) btn.addClass("is-active");
+      btn.addEventListener("click", () => {
+        this.viewMode = mode;
+        this.render();
+      });
+    });
+
     const navGroup = toolbar.createDiv("calendar-nav-group");
     const prevBtn = navGroup.createEl("button", { text: "<" });
-    prevBtn.setAttribute("aria-label", "上月");
-    prevBtn.addEventListener("click", () => {
-      this.currentDate = addMonths(this.currentDate, -1);
-      this.monthView?.setCurrentDate(this.currentDate);
-      this.monthView?.render();
-      this.updateNavTitle(navTitle);
-    });
+    prevBtn.addEventListener("click", () => this.nav(-1));
 
     const navTitle = navGroup.createSpan("calendar-nav-title");
-    this.updateNavTitle(navTitle);
 
     const nextBtn = navGroup.createEl("button", { text: ">" });
-    nextBtn.setAttribute("aria-label", "下月");
-    nextBtn.addEventListener("click", () => {
-      this.currentDate = addMonths(this.currentDate, 1);
-      this.monthView?.setCurrentDate(this.currentDate);
-      this.monthView?.render();
-      this.updateNavTitle(navTitle);
-    });
+    nextBtn.addEventListener("click", () => this.nav(1));
 
     const todayBtn = toolbar.createEl("button", { text: "今天" });
     todayBtn.addEventListener("click", () => {
       this.currentDate = new Date();
-      this.monthView?.setCurrentDate(this.currentDate);
-      this.monthView?.render();
-      this.updateNavTitle(navTitle);
+      this.render();
     });
 
     const createBtn = toolbar.createEl("button", { text: "创建事件" });
-    createBtn.addEventListener("click", () => {
-      const modal = new EventModal(this.app, this.eventStore, { mode: "create", initialDate: this.currentDate });
-      modal.afterClose = () => this.render();
-      modal.open();
-    });
+    createBtn.addEventListener("click", () => this.openEventModal("create", this.currentDate));
 
-    const monthContainer = this.containerEl.createDiv("calendar-month-wrapper");
-    this.monthView = new MonthView(
-      monthContainer,
-      this.eventStore,
-      this.calendarStore,
-      this.settings.weekStartDay,
-      this.currentDate,
-      {
-        onDateClick: (date) => {
-          const modal = new EventModal(this.app, this.eventStore, { mode: "create", initialDate: date });
-          modal.afterClose = () => this.render();
-          modal.open();
-        },
-        onEventClick: (event) => {
-          const modal = new EventModal(this.app, this.eventStore, { mode: "edit", event });
-          modal.afterClose = () => this.render();
-          modal.open();
-        },
-        onDayEventsClick: (date, events) => {
-          const dayModal = new DayEventsModal(this.app, date, events, (e) => {
-            dayModal.close();
-            const editModal = new EventModal(this.app, this.eventStore, { mode: "edit", event: e });
-            editModal.afterClose = () => this.render();
-            editModal.open();
-          });
-          dayModal.open();
-        },
-      }
-    );
-    this.monthView.render();
+    this.updateNavTitle(navTitle);
+
+    const contentArea = this.containerEl.createDiv("calendar-content-area");
+
+    if (this.viewMode === "month") {
+      const monthContainer = contentArea.createDiv("calendar-month-wrapper");
+      this.monthView = new MonthView(
+        monthContainer,
+        this.eventStore,
+        this.calendarStore,
+        this.settings.weekStartDay,
+        this.currentDate,
+        {
+          onDateClick: (date) => this.openEventModal("create", date),
+          onEventClick: (event) => this.openEventModal("edit", undefined, event),
+          onDayEventsClick: (date, events) => {
+            const dayModal = new DayEventsModal(this.app, date, events, (e) => {
+              dayModal.close();
+              this.openEventModal("edit", undefined, e);
+            });
+            dayModal.open();
+          },
+        }
+      );
+      this.monthView.render();
+    } else if (this.viewMode === "day") {
+      const dayContainer = contentArea.createDiv("calendar-day-wrapper");
+      this.dayView = new DayView(
+        dayContainer,
+        this.eventStore,
+        this.calendarStore,
+        this.currentDate,
+        {
+          onEventClick: (e) => this.openEventModal("edit", undefined, e),
+          onSlotClick: (date) => this.openEventModal("create", date),
+        }
+      );
+      this.dayView.render();
+    } else {
+      const weekContainer = contentArea.createDiv("calendar-week-wrapper");
+      this.weekView = new WeekView(
+        weekContainer,
+        this.eventStore,
+        this.calendarStore,
+        this.settings.weekStartDay,
+        this.currentDate,
+        {
+          onEventClick: (e) => this.openEventModal("edit", undefined, e),
+          onSlotClick: (date) => this.openEventModal("create", date),
+        }
+      );
+      this.weekView.render();
+    }
+  }
+
+  private nav(delta: number): void {
+    if (this.viewMode === "month") {
+      this.currentDate = addMonths(this.currentDate, delta);
+    } else if (this.viewMode === "week") {
+      this.currentDate = addDays(this.currentDate, delta * 7);
+    } else {
+      this.currentDate = addDays(this.currentDate, delta);
+    }
+    this.render();
   }
 
   private updateNavTitle(el: HTMLElement): void {
-    el.setText(`${this.currentDate.getFullYear()}年 ${MONTH_NAMES[this.currentDate.getMonth()]}`);
+    if (this.viewMode === "month") {
+      el.setText(`${this.currentDate.getFullYear()}年 ${MONTH_NAMES[this.currentDate.getMonth()]}`);
+    } else if (this.viewMode === "week") {
+      const days = getWeekDays(this.currentDate, this.settings.weekStartDay);
+      const start = days[0];
+      const end = days[6];
+      el.setText(`${start.getMonth() + 1}/${start.getDate()}-${end.getMonth() + 1}/${end.getDate()}`);
+    } else {
+      el.setText(`${this.currentDate.getMonth() + 1}月${this.currentDate.getDate()}日`);
+    }
   }
 }

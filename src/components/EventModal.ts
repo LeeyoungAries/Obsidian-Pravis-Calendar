@@ -71,7 +71,22 @@ export class EventModal extends Modal {
     endDateInput.style.marginRight = "0.5rem";
     endDateInput.value = ev ? toDateLocal(new Date(ev.end)) : toDateLocal(defaultEnd);
     endTimeInput.value = ev ? new Date(ev.end).toTimeString().slice(0, 5) : defaultEnd.toTimeString().slice(0, 5);
-    endRow.style.marginBottom = "1rem";
+    endRow.style.marginBottom = "0.5rem";
+
+    form.createEl("label", { text: "地点" }).style.display = "block";
+    const locationInput = form.createEl("input", { type: "text" });
+    locationInput.placeholder = "地点";
+    locationInput.value = ev?.location ?? "";
+    locationInput.style.width = "100%";
+    locationInput.style.marginBottom = "0.5rem";
+
+    form.createEl("label", { text: "备注" }).style.display = "block";
+    const notesInput = form.createEl("textarea");
+    notesInput.placeholder = "备注";
+    notesInput.value = ev?.notes ?? "";
+    notesInput.rows = 3;
+    notesInput.style.width = "100%";
+    notesInput.style.marginBottom = "1rem";
 
     const toggleTimeInputs = () => {
       const hide = allDayCheck.checked;
@@ -97,16 +112,18 @@ export class EventModal extends Modal {
         start = new Date(startDateInput.value + "T" + startTimeInput.value).toISOString();
         end = new Date(endDateInput.value + "T" + endTimeInput.value).toISOString();
       }
+      const location = locationInput.value.trim();
+      const notes = notesInput.value.trim();
       if (isEdit && ev) {
-        this.eventStore.updateEvent(ev.id, { title, start, end, allDay });
+        this.eventStore.updateEvent(ev.id, { title, start, end, allDay, location, notes });
       } else {
         this.eventStore.addEvent({
           title,
           start,
           end,
           allDay,
-          location: "",
-          notes: "",
+          location,
+          notes,
           calendarId: "cal_default",
           notePath: "",
           type: "event",
