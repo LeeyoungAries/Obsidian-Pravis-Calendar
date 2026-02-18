@@ -3,6 +3,7 @@ import type { EventStore } from "../store/EventStore";
 import type { CalendarStore } from "../store/CalendarStore";
 import { getMonthGrid, isSameDay, toDateKey } from "../utils/date";
 import { makeEventDraggable, makeDropTarget } from "../components/EventCard";
+import { setupMonthViewDragCreate } from "../utils/dragCreate";
 
 const WEEKDAY_NAMES = ["日", "一", "二", "三", "四", "五", "六"];
 
@@ -10,6 +11,7 @@ export interface MonthViewCallbacks {
   onDateClick?: (date: Date) => void;
   onEventClick?: (event: Event) => void;
   onDayEventsClick?: (date: Date, events: Event[]) => void;
+  onCreate?: (start: Date, end: Date) => void;
 }
 
 export class MonthView {
@@ -78,17 +80,13 @@ export class MonthView {
     for (const week of grid) {
       for (const cellDate of week) {
         const cell = gridEl.createDiv("calendar-month-cell");
+        cell.dataset.date = String(new Date(cellDate).setHours(0, 0, 0, 0));
         const isCurrentMonth = cellDate.getMonth() === month;
         if (!isCurrentMonth) cell.addClass("calendar-cell-other-month");
 
         const dayNum = cell.createDiv("calendar-cell-day");
         dayNum.setText(String(cellDate.getDate()));
         if (isSameDay(cellDate, today)) dayNum.addClass("calendar-cell-today");
-
-        cell.addEventListener("click", (ev) => {
-          if ((ev.target as HTMLElement).closest(".calendar-event-chip, .calendar-event-more")) return;
-          this.callbacks.onDateClick?.(cellDate);
-        });
 
         makeDropTarget(cell, (eventId) => {
           const evt = this.eventStore.getEvent(eventId);
@@ -140,5 +138,12 @@ export class MonthView {
         }
       }
     }
+
+    setupMonthViewDragCreate(gridEl, {
+      onDateClick: (date) => this.callbacks.onDateClick?.(date),
+      onCreate:
+        this.callbacks.onCreate ??
+        ((start) => this.callbacks.onDateClick?.(start)),
+    });
   }
 }

@@ -138,6 +138,21 @@ export class CalendarView extends ItemView {
             });
             dayModal.open();
           },
+          onCreate: (start, end) => {
+            const cal = this.calendarStore.getCalendars().find((c) => c.visible) ?? this.calendarStore.getCalendars()[0];
+            this.eventStore.addEvent({
+              title: "新事件",
+              start: start.toISOString(),
+              end: end.toISOString(),
+              allDay: true,
+              location: "",
+              notes: "",
+              calendarId: cal?.id ?? "cal_default",
+              notePath: "",
+              type: "event",
+              completed: false,
+            });
+          },
         }
       );
       this.monthView.render();
@@ -151,6 +166,21 @@ export class CalendarView extends ItemView {
         {
           onEventClick: (e) => this.openEventModal("edit", undefined, e),
           onSlotClick: (date) => this.openEventModal("create", date),
+          onCreate: (start, end) => {
+            const cal = this.calendarStore.getCalendars().find((c) => c.visible) ?? this.calendarStore.getCalendars()[0];
+            this.eventStore.addEvent({
+              title: "新事件",
+              start: start.toISOString(),
+              end: end.toISOString(),
+              allDay: false,
+              location: "",
+              notes: "",
+              calendarId: cal?.id ?? "cal_default",
+              notePath: "",
+              type: "event",
+              completed: false,
+            });
+          },
         }
       );
       this.dayView.render();
@@ -165,6 +195,21 @@ export class CalendarView extends ItemView {
         {
           onEventClick: (e) => this.openEventModal("edit", undefined, e),
           onSlotClick: (date) => this.openEventModal("create", date),
+          onCreate: (start, end) => {
+            const cal = this.calendarStore.getCalendars().find((c) => c.visible) ?? this.calendarStore.getCalendars()[0];
+            this.eventStore.addEvent({
+              title: "新事件",
+              start: start.toISOString(),
+              end: end.toISOString(),
+              allDay: false,
+              location: "",
+              notes: "",
+              calendarId: cal?.id ?? "cal_default",
+              notePath: "",
+              type: "event",
+              completed: false,
+            });
+          },
         }
       );
       this.weekView.render();

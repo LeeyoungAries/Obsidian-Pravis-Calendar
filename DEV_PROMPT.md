@@ -71,3 +71,55 @@ Obsidian 日历插件，迁移 iOS 日历核心能力。以事件为中心，支
 # 任务
 按 SCHEDULE.md Day 8 执行：全流程联调、边界 case 修复、按 PRD 验收标准 checklist 验收。
 ```
+
+---
+
+## 体验修复 Prompt（FIX_PLAN.md）
+
+将以下内容复制给 AI 编码助手，用于执行 FIX_PLAN.md 中的体验修复。
+
+### P0 阶段（优先）
+
+```
+# 角色
+你是 Obsidian 插件开发工程师。请按 FIX_PLAN.md 完成体验修复。
+
+# 项目
+Obsidian 日历插件，需对齐 iOS 日历使用体验。详见 FIX_PLAN.md。
+
+# 规范
+- 技术栈：TypeScript，原生 DOM
+- 代码：正式、紧凑，无 emoji
+
+# 任务
+按 FIX_PLAN.md P0 执行：
+1. 问题 2：重叠事件布局。新建 utils/overlapLayout.ts，实现 overlap 算法，为每个事件计算 column、totalColumns；修改 DayView、WeekView 中 timed 事件的渲染，按 width/left 并排显示
+2. 问题 3：固定表头。日视图全天区域、周视图表头与全天区域、周视图时间轴，使用 position: sticky，确保滚动时始终可见；调整 DOM 与滚动容器结构
+
+# 产出
+- 重叠事件并排显示，不遮挡
+- 日/周视图表头、全天区域、时间轴滚动时固定
+```
+
+### P1 阶段
+
+```
+# 任务
+按 FIX_PLAN.md P1 执行：
+1. 拖拽创建：DayView/WeekView 的 slot 上 mousedown→mousemove→mouseup，有位移时按起止 slot 创建事件，无位移则保持 onSlotClick 打开弹窗
+2. 拖拽调整时长：事件条底部增加可拖拽区域，mousedown→document mousemove→mouseup，根据 Y 变化更新 end 时间
+```
+
+### P2 阶段
+
+```
+# 任务
+按 FIX_PLAN.md P2 执行：当前时间线、打开日/周视图时滚动到当前时间、拖拽创建时的选区视觉反馈。
+```
+
+### P3 阶段
+
+```
+# 任务
+按 FIX_PLAN.md P3 执行：月视图拖拽创建、短事件最小高度 28-32px。
+```

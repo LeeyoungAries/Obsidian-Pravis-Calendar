@@ -2,6 +2,9 @@ import type { Event } from "../types";
 import type { EventStore } from "../store/EventStore";
 import type { CalendarStore } from "../store/CalendarStore";
 import { makeEventDraggable, makeDropTarget } from "../components/EventCard";
+import { computeOverlapLayout } from "../utils/overlapLayout";
+import { setupDayViewDragCreate } from "../utils/dragCreate";
+import { makeEventResizable } from "../utils/dragResize";
 
 const SLOT_HEIGHT = 48;
 const HOURS = 24;
@@ -9,6 +12,7 @@ const HOURS = 24;
 export interface DayViewCallbacks {
   onEventClick?: (event: Event) => void;
   onSlotClick?: (date: Date, hour: number) => void;
+  onCreate?: (start: Date, end: Date) => void;
 }
 
 export class DayView {
@@ -48,7 +52,9 @@ export class DayView {
     const filtered = events.filter((e) => visibleCalIds.has(e.calendarId));
 
     const allDayEvents = filtered.filter((e) => e.allDay);
-    const timedEvents = filtered.filter((e) => !e.allDay).sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+    const timedEvents = computeOverlapLayout(
+      filtered.filter((e) => !e.allDay)
+    );
 
     const wrapper = this.containerEl.createDiv("calendar-day-view");
 
@@ -111,6 +117,17 @@ export class DayView {
     const eventsAreaInner = eventsArea.createDiv("calendar-day-events-inner");
     eventsAreaInner.style.height = `${HOURS * SLOT_HEIGHT}px`;
 
+    setupDayViewDragCreate(eventsAreaInner, this.currentDate, SLOT_HEIGHT, {
+      onSlotClick: (date, hour) => {
+        const d = new Date(date);
+        d.setHours(hour, 0, 0, 0);
+        this.callbacks.onSlotClick?.(d, hour);
+      },
+      onCreate:
+        this.callbacks.onCreate ??
+        ((start) => this.callbacks.onSlotClick?.(start, start.getHours())),
+    });
+
     timedEvents.forEach((e) => {
       let start = new Date(e.start);
       let end = new Date(e.end);
@@ -118,13 +135,19 @@ export class DayView {
       if (end > dayEnd) end = dayEnd;
       const topPx = (start.getHours() + start.getMinutes() / 60) * SLOT_HEIGHT;
       const durationHours = (end.getTime() - start.getTime()) / (60 * 60 * 1000);
-      const heightPx = Math.max(durationHours * SLOT_HEIGHT, 24);
+      const heightPx = Math.max(durationHours * SLOT_HEIGHT, 30);
 
       const bar = eventsAreaInner.createDiv("calendar-day-event-bar");
       if (e.type === "todo") bar.addClass("calendar-event-todo");
       if (e.completed) bar.addClass("calendar-event-completed");
       bar.style.top = `${topPx}px`;
       bar.style.height = `${heightPx}px`;
+      const n = e.totalColumns || 1;
+      const gap = 2;
+      bar.style.width = `calc(${100 / n}% - ${gap}px)`;
+      bar.style.left =
+        e.column === 0 ? "2px" : `calc(${(e.column * 100) / n}% + ${gap}px)`;
+      bar.style.right = "auto";
       bar.style.borderLeftColor = this.calendarStore.getCalendars().find((c) => c.id === e.calendarId)?.color ?? "#007AFF";
       makeEventDraggable(bar, e);
       bar.createDiv("calendar-day-event-bar-title").setText(e.title);
@@ -133,6 +156,9 @@ export class DayView {
       bar.addEventListener("click", (ev) => {
         ev.stopPropagation();
         this.callbacks.onEventClick?.(e);
+      });
+      makeEventResizable(bar, e, SLOT_HEIGHT, (eventId, newEnd) => {
+        this.eventStore.updateEvent(eventId, { end: newEnd.toISOString() });
       });
     });
   }

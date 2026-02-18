@@ -3,6 +3,9 @@ import type { EventStore } from "../store/EventStore";
 import type { CalendarStore } from "../store/CalendarStore";
 import { getWeekDays, isSameDay } from "../utils/date";
 import { makeEventDraggable, makeDropTarget } from "../components/EventCard";
+import { computeOverlapLayout } from "../utils/overlapLayout";
+import { setupWeekViewDragCreate } from "../utils/dragCreate";
+import { makeEventResizable } from "../utils/dragResize";
 
 const SLOT_HEIGHT = 48;
 const HOURS = 24;
@@ -11,6 +14,7 @@ const WEEKDAY_NAMES = ["周日", "周一", "周二", "周三", "周四", "周五
 export interface WeekViewCallbacks {
   onEventClick?: (event: Event) => void;
   onSlotClick?: (date: Date, hour: number) => void;
+  onCreate?: (start: Date, end: Date) => void;
 }
 
 export class WeekView {
@@ -127,6 +131,7 @@ export class WeekView {
       slots.style.height = `${HOURS * SLOT_HEIGHT}px`;
       for (let h = 0; h < HOURS; h++) {
         const slot = slots.createDiv("calendar-week-cell");
+        slot.dataset.hour = String(h);
         slot.style.height = `${SLOT_HEIGHT}px`;
         const hour = h;
         makeDropTarget(slot, (eventId) => {
@@ -151,19 +156,27 @@ export class WeekView {
 
       const eventsLayer = colBody.createDiv("calendar-week-events");
       eventsLayer.style.height = `${HOURS * SLOT_HEIGHT}px`;
-      const dayEvents = timedEvents.filter((e) => isSameDay(new Date(e.start), dayDate));
+      const dayEvents = computeOverlapLayout(
+        timedEvents.filter((e) => isSameDay(new Date(e.start), dayDate))
+      );
       dayEvents.forEach((e) => {
         const start = new Date(e.start);
         const end = new Date(e.end);
         const topPx = (start.getHours() + start.getMinutes() / 60) * SLOT_HEIGHT;
         const durationHours = (end.getTime() - start.getTime()) / (60 * 60 * 1000);
-        const heightPx = Math.max(durationHours * SLOT_HEIGHT, 20);
+        const heightPx = Math.max(durationHours * SLOT_HEIGHT, 30);
 
         const bar = eventsLayer.createDiv("calendar-week-event-bar");
         if (e.type === "todo") bar.addClass("calendar-event-todo");
         if (e.completed) bar.addClass("calendar-event-completed");
         bar.style.top = `${topPx}px`;
         bar.style.height = `${heightPx}px`;
+        const n = e.totalColumns || 1;
+        const gap = 2;
+        bar.style.width = `calc(${100 / n}% - ${gap}px)`;
+        bar.style.left =
+          e.column === 0 ? "2px" : `calc(${(e.column * 100) / n}% + ${gap}px)`;
+        bar.style.right = "auto";
         bar.style.borderLeftColor = this.calendarStore.getCalendars().find((c) => c.id === e.calendarId)?.color ?? "#007AFF";
         makeEventDraggable(bar, e);
         bar.createDiv("calendar-week-event-bar-title").setText(e.title);
@@ -171,7 +184,21 @@ export class WeekView {
           ev.stopPropagation();
           this.callbacks.onEventClick?.(e);
         });
+        makeEventResizable(bar, e, SLOT_HEIGHT, (eventId, newEnd) => {
+          this.eventStore.updateEvent(eventId, { end: newEnd.toISOString() });
+        });
       });
+    });
+
+    setupWeekViewDragCreate(grid, days, SLOT_HEIGHT, {
+      onSlotClick: (date, hour) => {
+        const d = new Date(date);
+        d.setHours(hour, 0, 0, 0);
+        this.callbacks.onSlotClick?.(d, hour);
+      },
+      onCreate:
+        this.callbacks.onCreate ??
+        ((start) => this.callbacks.onSlotClick?.(start, start.getHours())),
     });
   }
 }

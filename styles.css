@@ -183,6 +183,10 @@
   gap: 0.5rem;
   padding: 0.5rem;
   border-bottom: 1px solid var(--background-modifier-border);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--background-primary);
 }
 
 .calendar-allday-label {
@@ -278,6 +282,10 @@
   gap: 0.5rem;
   padding: 0.5rem;
   border-bottom: 1px solid var(--background-modifier-border);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--background-primary);
 }
 
 .calendar-week-allday-label {
@@ -326,6 +334,10 @@
 .calendar-week-timeaxis {
   flex-shrink: 0;
   width: 3rem;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--background-primary);
 }
 
 .calendar-week-slot {
@@ -356,6 +368,10 @@
   text-align: center;
   padding: 4px;
   border-bottom: 1px solid var(--background-modifier-border);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--background-primary);
 }
 
 .calendar-week-col-body {
@@ -409,6 +425,15 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.calendar-event-resize-handle {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  cursor: ns-resize;
 }
 
 /* Drag and drop */
