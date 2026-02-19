@@ -8,7 +8,8 @@ export interface DragCreateCallbacks {
 }
 
 function createOverlay(containerEl: HTMLElement): HTMLElement {
-  const overlay = document.createElement("div");
+  const doc = containerEl.ownerDocument;
+  const overlay = doc.createElement("div");
   overlay.className = "calendar-drag-create-preview";
   overlay.style.position = "absolute";
   overlay.style.left = "4px";
@@ -40,8 +41,9 @@ export function setupDayViewDragCreate(
     startY = ev.clientY;
     startMinutes = getMinutesFromY(ev.clientY);
     hasMoved = false;
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
+    const doc = containerEl.ownerDocument;
+    doc.addEventListener("mousemove", onMouseMove);
+    doc.addEventListener("mouseup", onMouseUp);
   };
 
   const onMouseMove = (ev: MouseEvent): void => {
@@ -63,8 +65,9 @@ export function setupDayViewDragCreate(
   };
 
   const onMouseUp = (ev: MouseEvent): void => {
-    document.removeEventListener("mousemove", onMouseMove);
-    document.removeEventListener("mouseup", onMouseUp);
+    const doc = containerEl.ownerDocument;
+    doc.removeEventListener("mousemove", onMouseMove);
+    doc.removeEventListener("mouseup", onMouseUp);
     if (overlay) {
       overlay.remove();
       overlay = null;
@@ -141,8 +144,9 @@ export function setupWeekViewDragCreate(
     startX = ev.clientX;
     startY = ev.clientY;
     hasMoved = false;
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
+    const doc = gridEl.ownerDocument;
+    doc.addEventListener("mousemove", onMouseMove);
+    doc.addEventListener("mouseup", onMouseUp);
   };
 
   const onMouseMove = (ev: MouseEvent): void => {
@@ -166,7 +170,7 @@ export function setupWeekViewDragCreate(
     const heightPx = Math.max((durationMinutes / 60) * slotHeight, 30);
 
     if (!overlay) {
-      overlay = document.createElement("div");
+      overlay = gridEl.ownerDocument.createElement("div");
       overlay.className = "calendar-drag-create-preview";
       overlay.style.position = "absolute";
       overlay.style.left = "2px";
@@ -183,8 +187,9 @@ export function setupWeekViewDragCreate(
   };
 
   const onMouseUp = (ev: MouseEvent): void => {
-    document.removeEventListener("mousemove", onMouseMove);
-    document.removeEventListener("mouseup", onMouseUp);
+    const doc = gridEl.ownerDocument;
+    doc.removeEventListener("mousemove", onMouseMove);
+    doc.removeEventListener("mouseup", onMouseUp);
     if (overlay) {
       overlay.remove();
       overlay = null;
@@ -254,8 +259,9 @@ export function setupMonthViewDragCreate(
     startX = ev.clientX;
     startY = ev.clientY;
     hasMoved = false;
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
+    const doc = gridEl.ownerDocument;
+    doc.addEventListener("mousemove", onMouseMove);
+    doc.addEventListener("mouseup", onMouseUp);
   };
 
   const onMouseMove = (ev: MouseEvent): void => {
@@ -268,10 +274,11 @@ export function setupMonthViewDragCreate(
   };
 
   const onMouseUp = (ev: MouseEvent): void => {
-    document.removeEventListener("mousemove", onMouseMove);
-    document.removeEventListener("mouseup", onMouseUp);
+    const doc = gridEl.ownerDocument;
+    doc.removeEventListener("mousemove", onMouseMove);
+    doc.removeEventListener("mouseup", onMouseUp);
     const endDate = getCellDate(
-      document.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null
+      doc.elementFromPoint(ev.clientX, ev.clientY) as HTMLElement | null
     );
     if (hasMoved && startDate) {
       const end = endDate ?? startDate;

@@ -3,8 +3,8 @@ import { yToMinutes, minutesToY } from "./timeSlot";
 
 const DRAG_THRESHOLD = 4;
 
-function createGhost(variant: "day" | "week", title: string, timeStr: string, color: string): HTMLElement {
-  const ghost = document.createElement("div");
+function createGhost(doc: Document, variant: "day" | "week", title: string, timeStr: string, color: string): HTMLElement {
+  const ghost = doc.createElement("div");
   ghost.className = variant === "day"
     ? "calendar-drag-ghost calendar-day-event-bar"
     : "calendar-drag-ghost calendar-week-event-bar";
@@ -28,27 +28,27 @@ export function setupDayViewDragMove(
 ): void {
   let ghost: HTMLElement | null = null;
   let startY = 0;
-  let startMinutes = 0;
+  let clickOffsetY = 0;
   let durationMinutes = 0;
   let hasMoved = false;
 
   const onMouseDown = (ev: MouseEvent): void => {
     ev.stopPropagation();
-    const rect = containerEl.getBoundingClientRect();
+    const barRect = barEl.getBoundingClientRect();
     startY = ev.clientY;
-    const start = new Date(event.start);
-    startMinutes = start.getHours() * 60 + start.getMinutes();
-    durationMinutes = (new Date(event.end).getTime() - start.getTime()) / 60000;
+    clickOffsetY = ev.clientY - barRect.top;
+    durationMinutes = (new Date(event.end).getTime() - new Date(event.start).getTime()) / 60000;
     hasMoved = false;
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
+    const doc = containerEl.ownerDocument;
+    doc.addEventListener("mousemove", onMouseMove);
+    doc.addEventListener("mouseup", onMouseUp);
   };
 
   const onMouseMove = (ev: MouseEvent): void => {
     if (Math.abs(ev.clientY - startY) > DRAG_THRESHOLD) hasMoved = true;
     if (!hasMoved) return;
     const rect = containerEl.getBoundingClientRect();
-    const relY = ev.clientY - rect.top;
+    const relY = ev.clientY - rect.top - clickOffsetY;
     const newMinutes = yToMinutes(relY, slotHeight);
     const snappedMinutes = Math.max(0, Math.min(1439 - durationMinutes, newMinutes));
     const topPx = minutesToY(snappedMinutes, slotHeight);
@@ -59,7 +59,7 @@ export function setupDayViewDragMove(
       const end = new Date(event.end);
       const timeStr = `${start.getHours()}:${String(start.getMinutes()).padStart(2, "0")}-${end.getHours()}:${String(end.getMinutes()).padStart(2, "0")}`;
       const color = barEl.style.getPropertyValue("--event-color") || "var(--interactive-accent)";
-      ghost = createGhost("day", event.title, timeStr, color);
+      ghost = createGhost(containerEl.ownerDocument, "day", event.title, timeStr, color);
       Object.assign(ghost.style, {
         position: "absolute",
         left: barEl.style.left,
@@ -74,15 +74,16 @@ export function setupDayViewDragMove(
   };
 
   const onMouseUp = (ev: MouseEvent): void => {
-    document.removeEventListener("mousemove", onMouseMove);
-    document.removeEventListener("mouseup", onMouseUp);
+    const doc = containerEl.ownerDocument;
+    doc.removeEventListener("mousemove", onMouseMove);
+    doc.removeEventListener("mouseup", onMouseUp);
     if (ghost) {
       ghost.remove();
       ghost = null;
     }
     if (!hasMoved) return;
     const rect = containerEl.getBoundingClientRect();
-    const relY = ev.clientY - rect.top;
+    const relY = ev.clientY - rect.top - clickOffsetY;
     const newMinutes = yToMinutes(relY, slotHeight);
     const snappedMinutes = Math.max(0, Math.min(1439 - durationMinutes, newMinutes));
     const newStart = new Date(baseDate);
@@ -119,19 +120,20 @@ export function setupWeekViewDragMove(
   let ghost: HTMLElement | null = null;
   let ghostParent: HTMLElement | null = null;
   let startY = 0;
-  let startMinutes = 0;
+  let clickOffsetY = 0;
   let durationMinutes = 0;
   let hasMoved = false;
 
   const onMouseDown = (ev: MouseEvent): void => {
     ev.stopPropagation();
+    const barRect = barEl.getBoundingClientRect();
     startY = ev.clientY;
-    const start = new Date(event.start);
-    startMinutes = start.getHours() * 60 + start.getMinutes();
-    durationMinutes = (new Date(event.end).getTime() - start.getTime()) / 60000;
+    clickOffsetY = ev.clientY - barRect.top;
+    durationMinutes = (new Date(event.end).getTime() - new Date(event.start).getTime()) / 60000;
     hasMoved = false;
-    document.addEventListener("mousemove", onMouseMove);
-    document.addEventListener("mouseup", onMouseUp);
+    const doc = gridEl.ownerDocument;
+    doc.addEventListener("mousemove", onMouseMove);
+    doc.addEventListener("mouseup", onMouseUp);
   };
 
   const onMouseMove = (ev: MouseEvent): void => {
@@ -144,7 +146,7 @@ export function setupWeekViewDragMove(
     if (!eventsLayer) return;
 
     const rect = eventsLayer.getBoundingClientRect();
-    const relY = ev.clientY - rect.top;
+    const relY = ev.clientY - rect.top - clickOffsetY;
     const newMinutes = yToMinutes(relY, slotHeight);
     const snappedMinutes = Math.max(0, Math.min(1439 - durationMinutes, newMinutes));
     const topPx = minutesToY(snappedMinutes, slotHeight);
@@ -155,7 +157,7 @@ export function setupWeekViewDragMove(
       const end = new Date(event.end);
       const timeStr = `${start.getHours()}:${String(start.getMinutes()).padStart(2, "0")}-${end.getHours()}:${String(end.getMinutes()).padStart(2, "0")}`;
       const color = barEl.style.getPropertyValue("--event-color") || "var(--interactive-accent)";
-      ghost = createGhost("week", event.title, timeStr, color);
+      ghost = createGhost(gridEl.ownerDocument, "week", event.title, timeStr, color);
       Object.assign(ghost.style, {
         position: "absolute",
         left: barEl.style.left,
@@ -175,8 +177,9 @@ export function setupWeekViewDragMove(
   };
 
   const onMouseUp = (ev: MouseEvent): void => {
-    document.removeEventListener("mousemove", onMouseMove);
-    document.removeEventListener("mouseup", onMouseUp);
+    const doc = gridEl.ownerDocument;
+    doc.removeEventListener("mousemove", onMouseMove);
+    doc.removeEventListener("mouseup", onMouseUp);
     if (ghost) {
       ghost.remove();
       ghost = null;
@@ -187,7 +190,7 @@ export function setupWeekViewDragMove(
     const targetDate = days[targetDayIndex];
     const eventsLayer = gridEl.querySelectorAll(".calendar-week-col")[targetDayIndex]?.querySelector(".calendar-week-events");
     const rect = eventsLayer?.getBoundingClientRect();
-    const relY = rect ? ev.clientY - rect.top : 0;
+    const relY = rect ? ev.clientY - rect.top - clickOffsetY : 0;
     const newMinutes = yToMinutes(relY, slotHeight);
     const snappedMinutes = Math.max(0, Math.min(1439 - durationMinutes, newMinutes));
     const newStart = new Date(targetDate);

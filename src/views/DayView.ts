@@ -177,8 +177,11 @@ export class DayView {
         ev.stopPropagation();
         this.callbacks.onEventDblClick?.(e);
       });
-      makeEventResizable(bar, e, SLOT_HEIGHT, (eventId, newEnd) => {
-        this.eventStore.updateEvent(eventId, { end: newEnd.toISOString() });
+      makeEventResizable(bar, e, SLOT_HEIGHT, (eventId, newStart, newEnd) => {
+        this.eventStore.updateEvent(eventId, {
+          start: newStart.toISOString(),
+          end: newEnd.toISOString(),
+        });
       });
     });
   }
