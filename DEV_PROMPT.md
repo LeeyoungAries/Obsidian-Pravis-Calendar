@@ -123,3 +123,42 @@ Obsidian 日历插件，需对齐 iOS 日历使用体验。详见 FIX_PLAN.md。
 # 任务
 按 FIX_PLAN.md P3 执行：月视图拖拽创建、短事件最小高度 28-32px。
 ```
+
+---
+
+## 拖拽体验优化 Prompt（DRAG_UX_DESIGN.md）
+
+将以下内容复制给 AI 编码助手，用于执行 DRAG_UX_DESIGN.md 中的拖拽体验优化。
+
+```
+# 角色
+你是 Obsidian 插件开发工程师。请按 DRAG_UX_DESIGN.md 完成拖拽体验优化。
+
+# 项目
+Obsidian 日历插件。需实现：拖拽过程可视化（鼠标未释放前可见目标位置/大小）、时间粒度从 1 小时改为 15 分钟。
+
+# 规范
+- 技术栈：TypeScript，原生 DOM
+- 代码：正式、紧凑，无 emoji
+
+# 任务
+按 DRAG_UX_DESIGN.md 实施，顺序如下：
+
+1. 新建 utils/timeSlot.ts：yToMinutes、minutesToY、snapToSlot，15 分钟粒度（SLOTS_PER_HOUR=4）
+
+2. 新建 utils/dragMove.ts：鼠标拖拽移动事件，mousemove 时显示 ghost 预览，mouseup 时提交；日视图单列、周视图需根据 clientX 判断 dayIndex；导出 setupDayViewDragMove、setupWeekViewDragMove
+
+3. 修改 utils/dragResize.ts：mousemove 时实时更新事件条 height 和内部时间文本，15 分钟粒度；slotDelta 按 slotHeight/4 计算
+
+4. 修改 utils/dragCreate.ts：mousemove 时显示 overlay 选区预览，15 分钟粒度；getSlotFromY 改为 yToMinutes
+
+5. 修改 DayView.ts、WeekView.ts：日/周视图的 timed 事件条改用 dragMove，不再用 makeEventDraggable；全天、月视图保留 makeEventDraggable
+
+6. 修改 styles.css：添加 .calendar-drag-ghost、.calendar-drag-create-preview 样式
+
+# 产出
+- 事件移动：拖拽时 ghost 实时跟随，释放后正确落位
+- 事件 resize：拖拽时高度实时变化，15 分钟粒度
+- 拖拽创建：有 overlay 选区预览，15 分钟粒度
+- 时间轴标签保持整点，仅交互 15 分钟
+```

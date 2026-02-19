@@ -8,6 +8,10 @@ export interface LayoutResult {
   totalColumns: number;
 }
 
+function overlaps(aStart: number, aEnd: number, bStart: number, bEnd: number): boolean {
+  return aStart < bEnd && bStart < aEnd;
+}
+
 export function computeOverlapLayout<T extends TimedEvent>(
   events: T[]
 ): (T & LayoutResult)[] {
@@ -15,7 +19,6 @@ export function computeOverlapLayout<T extends TimedEvent>(
     (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()
   );
   const columnEnds: number[] = [];
-  let maxCol = 0;
   const result: (T & LayoutResult)[] = [];
 
   for (const e of sorted) {
@@ -31,10 +34,11 @@ export function computeOverlapLayout<T extends TimedEvent>(
     } else {
       columnEnds[col] = end;
     }
-    maxCol = Math.max(maxCol, col);
-    result.push({ ...e, column: col, totalColumns: 0 });
+    const overlapCount = sorted.filter(
+      (o) => overlaps(start, end, new Date(o.start).getTime(), new Date(o.end).getTime())
+    ).length;
+    result.push({ ...e, column: col, totalColumns: overlapCount });
   }
 
-  const totalColumns = maxCol + 1;
-  return result.map((r) => ({ ...r, totalColumns }));
+  return result;
 }

@@ -9,7 +9,9 @@ const WEEKDAY_NAMES = ["日", "一", "二", "三", "四", "五", "六"];
 
 export interface MonthViewCallbacks {
   onDateClick?: (date: Date) => void;
-  onEventClick?: (event: Event) => void;
+  onEventSelect?: (event: Event) => void;
+  onEventDblClick?: (event: Event) => void;
+  selectedEventId?: string | null;
   onDayEventsClick?: (date: Date, events: Event[]) => void;
   onCreate?: (start: Date, end: Date) => void;
 }
@@ -120,12 +122,17 @@ export class MonthView {
           const chip = list.createDiv("calendar-event-chip");
           if (e.type === "todo") chip.addClass("calendar-event-todo");
           if (e.completed) chip.addClass("calendar-event-completed");
+          if (e.id === this.callbacks.selectedEventId) chip.addClass("calendar-event-selected");
           chip.setText(e.title);
-          chip.style.borderLeftColor = this.calendarStore.getCalendars().find((c) => c.id === e.calendarId)?.color ?? "#007AFF";
+          chip.style.setProperty("--event-color", this.calendarStore.getCalendars().find((c) => c.id === e.calendarId)?.color ?? "var(--interactive-accent)");
           makeEventDraggable(chip, e);
           chip.addEventListener("click", (ev) => {
             ev.stopPropagation();
-            this.callbacks.onEventClick?.(e);
+            this.callbacks.onEventSelect?.(e);
+          });
+          chip.addEventListener("dblclick", (ev) => {
+            ev.stopPropagation();
+            this.callbacks.onEventDblClick?.(e);
           });
         });
         if (dayEvents.length > 3) {

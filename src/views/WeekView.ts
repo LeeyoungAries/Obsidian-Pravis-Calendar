@@ -5,6 +5,7 @@ import { getWeekDays, isSameDay } from "../utils/date";
 import { makeEventDraggable, makeDropTarget } from "../components/EventCard";
 import { computeOverlapLayout } from "../utils/overlapLayout";
 import { setupWeekViewDragCreate } from "../utils/dragCreate";
+import { setupWeekViewDragMove } from "../utils/dragMove";
 import { makeEventResizable } from "../utils/dragResize";
 
 const SLOT_HEIGHT = 48;
@@ -12,7 +13,9 @@ const HOURS = 24;
 const WEEKDAY_NAMES = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
 
 export interface WeekViewCallbacks {
-  onEventClick?: (event: Event) => void;
+  onEventSelect?: (event: Event) => void;
+  onEventDblClick?: (event: Event) => void;
+  selectedEventId?: string | null;
   onSlotClick?: (date: Date, hour: number) => void;
   onCreate?: (start: Date, end: Date) => void;
 }
@@ -103,10 +106,16 @@ export class WeekView {
           const chip = col.createDiv("calendar-week-event-chip");
           if (e.type === "todo") chip.addClass("calendar-event-todo");
           if (e.completed) chip.addClass("calendar-event-completed");
+          if (e.id === this.callbacks.selectedEventId) chip.addClass("calendar-event-selected");
           chip.setText(e.title);
-          chip.style.borderLeftColor = this.calendarStore.getCalendars().find((c) => c.id === e.calendarId)?.color ?? "#007AFF";
+          chip.style.setProperty("--event-color", this.calendarStore.getCalendars().find((c) => c.id === e.calendarId)?.color ?? "var(--interactive-accent)");
           makeEventDraggable(chip, e);
-          chip.addEventListener("click", () => this.callbacks.onEventClick?.(e));
+          chip.addEventListener("click", (ev) => {
+            this.containerEl.querySelector(".calendar-event-selected")?.classList.remove("calendar-event-selected");
+            (ev.currentTarget as HTMLElement).classList.add("calendar-event-selected");
+            this.callbacks.onEventSelect?.(e);
+          });
+          chip.addEventListener("dblclick", () => this.callbacks.onEventDblClick?.(e));
         });
       });
     }
@@ -150,7 +159,7 @@ export class WeekView {
             allDay: false,
           });
         });
-        slot.addEventListener("click", () => {
+        slot.addEventListener("dblclick", () => {
           const d = new Date(dayDate);
           d.setHours(hour, 0, 0, 0);
           this.callbacks.onSlotClick?.(d, hour);
@@ -162,6 +171,7 @@ export class WeekView {
       const dayEvents = computeOverlapLayout(
         timedEvents.filter((e) => isSameDay(new Date(e.start), dayDate))
       );
+      const dayIndex = days.indexOf(dayDate);
       dayEvents.forEach((e) => {
         const start = new Date(e.start);
         const end = new Date(e.end);
@@ -172,6 +182,7 @@ export class WeekView {
         const bar = eventsLayer.createDiv("calendar-week-event-bar");
         if (e.type === "todo") bar.addClass("calendar-event-todo");
         if (e.completed) bar.addClass("calendar-event-completed");
+        if (e.id === this.callbacks.selectedEventId) bar.addClass("calendar-event-selected");
         bar.style.top = `${topPx}px`;
         bar.style.height = `${heightPx}px`;
         const n = e.totalColumns || 1;
@@ -180,12 +191,28 @@ export class WeekView {
         bar.style.left =
           e.column === 0 ? "2px" : `calc(${(e.column * 100) / n}% + ${gap}px)`;
         bar.style.right = "auto";
-        bar.style.borderLeftColor = this.calendarStore.getCalendars().find((c) => c.id === e.calendarId)?.color ?? "#007AFF";
-        makeEventDraggable(bar, e);
+        bar.style.setProperty("--event-color", this.calendarStore.getCalendars().find((c) => c.id === e.calendarId)?.color ?? "var(--interactive-accent)");
+        setupWeekViewDragMove(bar, e, days, SLOT_HEIGHT, grid, dayIndex, {
+          onUpdate: (eventId, newStart, newEnd) => {
+            this.eventStore.updateEvent(eventId, {
+              start: newStart.toISOString(),
+              end: newEnd.toISOString(),
+              allDay: false,
+            });
+          },
+        });
         bar.createDiv("calendar-week-event-bar-title").setText(e.title);
+        const timeStr = `${start.getHours()}:${String(start.getMinutes()).padStart(2, "0")}-${end.getHours()}:${String(end.getMinutes()).padStart(2, "0")}`;
+        bar.createDiv("calendar-day-event-bar-time").setText(timeStr);
         bar.addEventListener("click", (ev) => {
           ev.stopPropagation();
-          this.callbacks.onEventClick?.(e);
+          this.containerEl.querySelector(".calendar-event-selected")?.classList.remove("calendar-event-selected");
+          (ev.currentTarget as HTMLElement).classList.add("calendar-event-selected");
+          this.callbacks.onEventSelect?.(e);
+        });
+        bar.addEventListener("dblclick", (ev) => {
+          ev.stopPropagation();
+          this.callbacks.onEventDblClick?.(e);
         });
         makeEventResizable(bar, e, SLOT_HEIGHT, (eventId, newEnd) => {
           this.eventStore.updateEvent(eventId, { end: newEnd.toISOString() });
@@ -194,11 +221,7 @@ export class WeekView {
     });
 
     setupWeekViewDragCreate(grid, days, SLOT_HEIGHT, {
-      onSlotClick: (date, hour) => {
-        const d = new Date(date);
-        d.setHours(hour, 0, 0, 0);
-        this.callbacks.onSlotClick?.(d, hour);
-      },
+      onSlotClick: (date) => this.callbacks.onSlotClick?.(date, date.getHours()),
       onCreate:
         this.callbacks.onCreate ??
         ((start) => this.callbacks.onSlotClick?.(start, start.getHours())),

@@ -1,6 +1,7 @@
 import type { App } from "obsidian";
 import type { Event, Calendar, CalendarData } from "../types";
 import { generateEventId, generateCalendarId } from "../utils/id";
+import { DEFAULT_CALENDAR_COLOR } from "../constants/colors";
 
 const DATA_PATH = ".obsidian/calendar-events.json";
 const SAVE_DEBOUNCE_MS = 300;
@@ -8,7 +9,7 @@ const SAVE_DEBOUNCE_MS = 300;
 const DEFAULT_CALENDAR: Calendar = {
   id: "cal_default",
   name: "默认",
-  color: "#007AFF",
+  color: DEFAULT_CALENDAR_COLOR,
   visible: true,
 };
 

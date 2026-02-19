@@ -24,6 +24,7 @@ export class CalendarView extends ItemView {
   private weekView: WeekView | null = null;
   private currentDate: Date;
   private viewMode: ViewMode;
+  private selectedEventId: string | null = null;
   private changeHandler = () => this.render();
 
   constructor(
@@ -69,6 +70,13 @@ export class CalendarView extends ItemView {
   }
 
   private render(): void {
+    const oldContentArea = this.containerEl.querySelector(".calendar-content-area");
+    const scrollWrapper = oldContentArea?.querySelector(".calendar-week-scroll-wrapper");
+    const savedScrollTop = (oldContentArea as HTMLElement)?.scrollTop ?? 0;
+    const savedScrollLeft = (oldContentArea as HTMLElement)?.scrollLeft ?? 0;
+    const savedScrollWrapperTop = (scrollWrapper as HTMLElement)?.scrollTop ?? 0;
+    const savedScrollWrapperLeft = (scrollWrapper as HTMLElement)?.scrollLeft ?? 0;
+
     this.containerEl.empty();
 
     const toolbar = this.containerEl.createDiv("obsidian-calendar-toolbar");
@@ -130,7 +138,9 @@ export class CalendarView extends ItemView {
         this.currentDate,
         {
           onDateClick: (date) => this.openEventModal("create", date),
-          onEventClick: (event) => this.openEventModal("edit", undefined, event),
+          onEventSelect: (e) => { this.selectedEventId = e.id; },
+          onEventDblClick: (e) => this.openEventModal("edit", undefined, e),
+          selectedEventId: this.selectedEventId,
           onDayEventsClick: (date, events) => {
             const dayModal = new DayEventsModal(this.app, date, events, (e) => {
               dayModal.close();
@@ -164,7 +174,9 @@ export class CalendarView extends ItemView {
         this.calendarStore,
         this.currentDate,
         {
-          onEventClick: (e) => this.openEventModal("edit", undefined, e),
+          onEventSelect: (e) => { this.selectedEventId = e.id; },
+          onEventDblClick: (e) => this.openEventModal("edit", undefined, e),
+          selectedEventId: this.selectedEventId,
           onSlotClick: (date) => this.openEventModal("create", date),
           onCreate: (start, end) => {
             const cal = this.calendarStore.getCalendars().find((c) => c.visible) ?? this.calendarStore.getCalendars()[0];
@@ -193,7 +205,9 @@ export class CalendarView extends ItemView {
         this.settings.weekStartDay,
         this.currentDate,
         {
-          onEventClick: (e) => this.openEventModal("edit", undefined, e),
+          onEventSelect: (e) => { this.selectedEventId = e.id; },
+          onEventDblClick: (e) => this.openEventModal("edit", undefined, e),
+          selectedEventId: this.selectedEventId,
           onSlotClick: (date) => this.openEventModal("create", date),
           onCreate: (start, end) => {
             const cal = this.calendarStore.getCalendars().find((c) => c.visible) ?? this.calendarStore.getCalendars()[0];
@@ -214,6 +228,19 @@ export class CalendarView extends ItemView {
       );
       this.weekView.render();
     }
+
+    requestAnimationFrame(() => {
+      const newContentArea = this.containerEl.querySelector(".calendar-content-area");
+      const newScrollWrapper = newContentArea?.querySelector(".calendar-week-scroll-wrapper");
+      if (newContentArea instanceof HTMLElement) {
+        newContentArea.scrollTop = savedScrollTop;
+        newContentArea.scrollLeft = savedScrollLeft;
+      }
+      if (newScrollWrapper instanceof HTMLElement) {
+        newScrollWrapper.scrollTop = savedScrollWrapperTop;
+        newScrollWrapper.scrollLeft = savedScrollWrapperLeft;
+      }
+    });
   }
 
   private nav(delta: number): void {

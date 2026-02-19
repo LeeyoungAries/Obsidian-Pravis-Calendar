@@ -1,6 +1,7 @@
 import { PluginSettingTab, type App, type Plugin } from "obsidian";
 import type { PluginSettings, ViewMode } from "./types";
 import type { CalendarStore } from "./store/CalendarStore";
+import { CALENDAR_COLORS } from "./constants/colors";
 
 export class CalendarSettingTab extends PluginSettingTab {
   constructor(
@@ -86,12 +87,11 @@ export class CalendarSettingTab extends PluginSettingTab {
     });
     const addBtn = containerEl.createEl("button", { text: "添加日历" });
     addBtn.addEventListener("click", () => {
-      const colors = ["#007AFF", "#34C759", "#FF9500", "#FF3B30", "#AF52DE"];
       const names = ["工作", "个人", "家庭"];
       const idx = calendars.length % names.length;
       this.calendarStore.addCalendar({
         name: names[idx] || "新日历",
-        color: colors[calendars.length % colors.length],
+        color: CALENDAR_COLORS[calendars.length % CALENDAR_COLORS.length],
         visible: true,
       });
       this.display();
