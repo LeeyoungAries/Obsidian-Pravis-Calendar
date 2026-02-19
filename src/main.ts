@@ -9,6 +9,7 @@ import { createEventLinkProcessor } from "./eventLinkProcessor";
 const DEFAULT_SETTINGS: PluginSettings = {
   weekStartDay: 0,
   defaultView: "month",
+  openOnStartup: false,
 };
 
 export default class CalendarPlugin extends Plugin {
@@ -39,7 +40,6 @@ export default class CalendarPlugin extends Plugin {
     this.addCommand({
       id: "calendar-undo",
       name: "日历: 撤销",
-      hotkeys: [{ modifiers: ["Mod"], key: "z" }],
       checkCallback: (checking) => {
         const leaf = this.app.workspace.activeLeaf;
         const inCalendar = leaf?.view?.getViewType?.() === VIEW_TYPE_CALENDAR;
@@ -52,7 +52,6 @@ export default class CalendarPlugin extends Plugin {
     this.addCommand({
       id: "calendar-redo",
       name: "日历: 重做",
-      hotkeys: [{ modifiers: ["Mod", "Shift"], key: "z" }],
       checkCallback: (checking) => {
         const leaf = this.app.workspace.activeLeaf;
         const inCalendar = leaf?.view?.getViewType?.() === VIEW_TYPE_CALENDAR;
@@ -69,6 +68,15 @@ export default class CalendarPlugin extends Plugin {
     this.registerMarkdownPostProcessor(
       createEventLinkProcessor((eventId) => this.openCalendarToEvent(eventId))
     );
+
+    if (this.settings.openOnStartup) {
+      this.app.workspace.onLayoutReady(() => this.openCalendarOnStartup());
+    }
+  }
+
+  private async openCalendarOnStartup(): Promise<void> {
+    const leaf = this.app.workspace.getLeaf(false);
+    await leaf.setViewState({ type: VIEW_TYPE_CALENDAR, active: true });
   }
 
   private async openCalendarToEvent(eventId: string): Promise<void> {
