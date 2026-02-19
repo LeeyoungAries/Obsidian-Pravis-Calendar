@@ -118,7 +118,8 @@ export class MonthView {
 
         const dayEvents = eventsByDay.get(toDateKey(cellDate)) ?? [];
         const list = cell.createDiv("calendar-cell-events");
-        dayEvents.slice(0, 3).forEach((e) => {
+        const maxVisible = 6;
+        dayEvents.slice(0, maxVisible).forEach((e) => {
           const chip = list.createDiv("calendar-event-chip");
           if (e.type === "todo") chip.addClass("calendar-event-todo");
           if (e.completed) chip.addClass("calendar-event-completed");
@@ -135,9 +136,9 @@ export class MonthView {
             this.callbacks.onEventDblClick?.(e);
           });
         });
-        if (dayEvents.length > 3) {
+        if (dayEvents.length > maxVisible) {
           const more = list.createDiv("calendar-event-more");
-          more.setText(`+${dayEvents.length - 3} 更多`);
+          more.setText(`+${dayEvents.length - maxVisible} 更多`);
           more.addEventListener("click", (ev) => {
             ev.stopPropagation();
             this.callbacks.onDayEventsClick?.(cellDate, dayEvents);

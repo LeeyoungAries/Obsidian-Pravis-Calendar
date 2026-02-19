@@ -60,11 +60,13 @@
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 1px;
   flex: 1;
-  min-height: 300px;
+  min-height: 600px;
 }
 
 .calendar-month-cell {
-  min-height: 5rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 10rem;
   padding: 4px;
   border: 1px solid var(--background-modifier-border);
   border-radius: 4px;
@@ -79,29 +81,36 @@
   opacity: 0.5;
 }
 
+/* 日期区固定高度，所有格子统一，事件从同一高度开始（已考虑下划线空间） */
+.calendar-cell-day {
+  font-size: 0.8rem;
+  line-height: 1.2;
+  height: calc(1.2em + 4px);
+  margin-bottom: 2px;
+  flex-shrink: 0;
+  box-sizing: content-box;
+}
+
 .calendar-cell-today {
   font-weight: 700;
   color: #ff3b30;
-  border-bottom: 2px solid #ff3b30;
-  padding-bottom: 2px;
+  box-shadow: 0 2px 0 0 #ff3b30;
   display: inline-block;
-}
-
-.calendar-cell-day {
-  font-size: 0.8rem;
-  margin-bottom: 2px;
 }
 
 .calendar-cell-events {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
+  flex: 1;
+  min-height: 0;
 }
 
 .calendar-event-chip {
-  font-size: 0.7rem;
-  padding: 2px 4px;
-  border-radius: 2px;
+  font-size: 0.75rem;
+  padding: 4px 6px;
+  min-height: 1.4em;
+  border-radius: 3px;
   border-left: 3px solid var(--event-color, var(--interactive-accent));
   background: color-mix(in srgb, var(--event-color, var(--interactive-accent)) 22%, var(--background-secondary));
   overflow: hidden;
