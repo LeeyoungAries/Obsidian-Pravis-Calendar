@@ -76,6 +76,8 @@ export class CalendarView extends ItemView {
     const savedScrollLeft = (oldContentArea as HTMLElement)?.scrollLeft ?? 0;
     const savedScrollWrapperTop = (scrollWrapper as HTMLElement)?.scrollTop ?? 0;
     const savedScrollWrapperLeft = (scrollWrapper as HTMLElement)?.scrollLeft ?? 0;
+    const wasDayView = !!oldContentArea?.querySelector(".calendar-day-wrapper");
+    const wasWeekView = !!scrollWrapper;
 
     this.containerEl.empty();
 
@@ -229,16 +231,42 @@ export class CalendarView extends ItemView {
       this.weekView.render();
     }
 
+    const SLOT_HEIGHT = 48;
+    const DEFAULT_SCROLL_START_HOUR = 8;
+    const defaultScrollTop = DEFAULT_SCROLL_START_HOUR * SLOT_HEIGHT;
+
     requestAnimationFrame(() => {
       const newContentArea = this.containerEl.querySelector(".calendar-content-area");
       const newScrollWrapper = newContentArea?.querySelector(".calendar-week-scroll-wrapper");
-      if (newContentArea instanceof HTMLElement) {
+      if (this.viewMode === "day" && newContentArea instanceof HTMLElement) {
+        if (wasDayView) {
+          newContentArea.scrollTop = savedScrollTop;
+          newContentArea.scrollLeft = savedScrollLeft;
+        } else {
+          newContentArea.scrollTop = defaultScrollTop;
+          newContentArea.scrollLeft = savedScrollLeft;
+        }
+      } else if (this.viewMode === "week") {
+        if (newContentArea instanceof HTMLElement) {
+          newContentArea.scrollLeft = savedScrollLeft;
+        }
+        if (newScrollWrapper instanceof HTMLElement) {
+          if (wasWeekView) {
+            newScrollWrapper.scrollTop = savedScrollWrapperTop;
+            newScrollWrapper.scrollLeft = savedScrollWrapperLeft;
+          } else {
+            newScrollWrapper.scrollTop = defaultScrollTop;
+            const todayCol = newScrollWrapper.querySelector(".calendar-col-today")?.closest(".calendar-week-col");
+            if (todayCol && todayCol instanceof HTMLElement) {
+              todayCol.scrollIntoView({ inline: "center", block: "nearest", behavior: "auto" });
+            } else {
+              newScrollWrapper.scrollLeft = savedScrollWrapperLeft;
+            }
+          }
+        }
+      } else if (newContentArea instanceof HTMLElement) {
         newContentArea.scrollTop = savedScrollTop;
         newContentArea.scrollLeft = savedScrollLeft;
-      }
-      if (newScrollWrapper instanceof HTMLElement) {
-        newScrollWrapper.scrollTop = savedScrollWrapperTop;
-        newScrollWrapper.scrollLeft = savedScrollWrapperLeft;
       }
     });
   }

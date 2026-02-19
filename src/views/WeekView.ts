@@ -4,6 +4,7 @@ import type { CalendarStore } from "../store/CalendarStore";
 import { getWeekDays, isSameDay } from "../utils/date";
 import { makeEventDraggable, makeDropTarget } from "../components/EventCard";
 import { computeOverlapLayout } from "../utils/overlapLayout";
+import { computeAllDayLayout } from "../utils/allDayOverlapLayout";
 import { setupWeekViewDragCreate } from "../utils/dragCreate";
 import { setupWeekViewDragMove } from "../utils/dragMove";
 import { makeEventResizable } from "../utils/dragResize";
@@ -65,60 +66,61 @@ export class WeekView {
     const wrapper = this.containerEl.createDiv("calendar-week-view");
     const scrollWrapper = wrapper.createDiv("calendar-week-scroll-wrapper");
 
-    if (allDayEvents.length > 0) {
-      const allDaySection = scrollWrapper.createDiv("calendar-week-allday");
-      allDaySection.createDiv("calendar-week-allday-label").setText("全天");
-      const allDayGrid = allDaySection.createDiv("calendar-week-allday-grid");
-      days.forEach((dayDate) => {
-        const col = allDayGrid.createDiv("calendar-week-allday-col");
-        makeDropTarget(col, (eventId) => {
-          const evt = this.eventStore.getEvent(eventId);
-          if (!evt) return;
-          const targetStart = new Date(dayDate);
-          targetStart.setHours(0, 0, 0, 0);
-          const targetEnd = new Date(dayDate);
-          targetEnd.setHours(23, 59, 59, 999);
-          if (evt.allDay) {
-            this.eventStore.updateEvent(eventId, {
-              start: targetStart.toISOString(),
-              end: targetEnd.toISOString(),
-            });
-          } else {
-            const origStart = new Date(evt.start);
-            const duration = new Date(evt.end).getTime() - new Date(evt.start).getTime();
-            const newStart = new Date(dayDate);
-            newStart.setHours(origStart.getHours(), origStart.getMinutes(), 0, 0);
-            const newEnd = new Date(newStart.getTime() + duration);
-            this.eventStore.updateEvent(eventId, {
-              start: newStart.toISOString(),
-              end: newEnd.toISOString(),
-            });
-          }
-        });
-        const dayEvents = allDayEvents.filter((e) => {
-          const start = new Date(e.start);
-          start.setHours(0, 0, 0, 0);
-          const end = new Date(e.end);
-          end.setHours(23, 59, 59, 999);
-          return dayDate >= start && dayDate <= end;
-        });
-        dayEvents.forEach((e) => {
-          const chip = col.createDiv("calendar-week-event-chip");
-          if (e.type === "todo") chip.addClass("calendar-event-todo");
-          if (e.completed) chip.addClass("calendar-event-completed");
-          if (e.id === this.callbacks.selectedEventId) chip.addClass("calendar-event-selected");
-          chip.setText(e.title);
-          chip.style.setProperty("--event-color", this.calendarStore.getCalendars().find((c) => c.id === e.calendarId)?.color ?? "var(--interactive-accent)");
-          makeEventDraggable(chip, e);
-          chip.addEventListener("click", (ev) => {
-            this.containerEl.querySelector(".calendar-event-selected")?.classList.remove("calendar-event-selected");
-            (ev.currentTarget as HTMLElement).classList.add("calendar-event-selected");
-            this.callbacks.onEventSelect?.(e);
+    const allDaySection = scrollWrapper.createDiv("calendar-week-allday");
+    allDaySection.createDiv("calendar-week-allday-label").setText("全天");
+    const allDayGrid = allDaySection.createDiv("calendar-week-allday-grid");
+    const layoutItems = computeAllDayLayout(allDayEvents, days);
+    const rowCount = layoutItems.length > 0 ? Math.max(...layoutItems.map((i) => i.row)) + 1 : 1;
+    allDayGrid.style.gridTemplateRows = `repeat(${rowCount}, 22px)`;
+
+    days.forEach((dayDate, colIndex) => {
+      const col = allDayGrid.createDiv("calendar-week-allday-col");
+      col.style.gridColumn = String(colIndex + 1);
+      col.style.gridRow = `1 / ${rowCount + 1}`;
+      makeDropTarget(col, (eventId) => {
+        const evt = this.eventStore.getEvent(eventId);
+        if (!evt) return;
+        const targetStart = new Date(dayDate);
+        targetStart.setHours(0, 0, 0, 0);
+        const targetEnd = new Date(dayDate);
+        targetEnd.setHours(23, 59, 59, 999);
+        if (evt.allDay) {
+          this.eventStore.updateEvent(eventId, {
+            start: targetStart.toISOString(),
+            end: targetEnd.toISOString(),
           });
-          chip.addEventListener("dblclick", () => this.callbacks.onEventDblClick?.(e));
-        });
+        } else {
+          const origStart = new Date(evt.start);
+          const duration = new Date(evt.end).getTime() - new Date(evt.start).getTime();
+          const newStart = new Date(dayDate);
+          newStart.setHours(origStart.getHours(), origStart.getMinutes(), 0, 0);
+          const newEnd = new Date(newStart.getTime() + duration);
+          this.eventStore.updateEvent(eventId, {
+            start: newStart.toISOString(),
+            end: newEnd.toISOString(),
+          });
+        }
       });
-    }
+    });
+
+    layoutItems.forEach((item) => {
+      const bar = allDayGrid.createDiv("calendar-week-allday-bar");
+      const span = item.endCol - item.startCol + 1;
+      bar.style.gridColumn = `${item.startCol + 1} / span ${span}`;
+      bar.style.gridRow = String(item.row + 1);
+      if (item.type === "todo") bar.addClass("calendar-event-todo");
+      if (item.completed) bar.addClass("calendar-event-completed");
+      if (item.id === this.callbacks.selectedEventId) bar.addClass("calendar-event-selected");
+      bar.setText(item.title);
+      bar.style.setProperty("--event-color", this.calendarStore.getCalendars().find((c) => c.id === item.calendarId)?.color ?? "var(--interactive-accent)");
+      makeEventDraggable(bar, item);
+      bar.addEventListener("click", (ev) => {
+        this.containerEl.querySelector(".calendar-event-selected")?.classList.remove("calendar-event-selected");
+        (ev.currentTarget as HTMLElement).classList.add("calendar-event-selected");
+        this.callbacks.onEventSelect?.(item);
+      });
+      bar.addEventListener("dblclick", () => this.callbacks.onEventDblClick?.(item));
+    });
 
     const timeSection = scrollWrapper.createDiv("calendar-week-timesection");
     const timeAxis = timeSection.createDiv("calendar-week-timeaxis");
@@ -130,12 +132,16 @@ export class WeekView {
       slot.style.height = `${SLOT_HEIGHT}px`;
     }
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const grid = timeSection.createDiv("calendar-week-grid");
     days.forEach((dayDate) => {
       const col = grid.createDiv("calendar-week-col");
-      col.createDiv("calendar-week-col-header").setText(
+      const header = col.createDiv("calendar-week-col-header");
+      header.setText(
         `${WEEKDAY_NAMES[dayDate.getDay()]} ${dayDate.getMonth() + 1}/${dayDate.getDate()}`
       );
+      if (isSameDay(dayDate, today)) header.addClass("calendar-col-today");
       const colBody = col.createDiv("calendar-week-col-body");
       colBody.style.position = "relative";
 
