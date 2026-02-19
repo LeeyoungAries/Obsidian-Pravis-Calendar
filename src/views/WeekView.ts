@@ -16,6 +16,7 @@ const WEEKDAY_NAMES = ["周日", "周一", "周二", "周三", "周四", "周五
 export interface WeekViewCallbacks {
   onEventSelect?: (event: Event) => void;
   onEventDblClick?: (event: Event) => void;
+  onNoteLinkClick?: (event: Event, ev?: MouseEvent) => void;
   selectedEventId?: string | null;
   onSlotClick?: (date: Date, hour: number) => void;
   onCreate?: (start: Date, end: Date) => void;
@@ -111,7 +112,20 @@ export class WeekView {
       if (item.type === "todo") bar.addClass("calendar-event-todo");
       if (item.completed) bar.addClass("calendar-event-completed");
       if (item.id === this.callbacks.selectedEventId) bar.addClass("calendar-event-selected");
-      bar.setText(item.title);
+      bar.style.display = "flex";
+      bar.style.alignItems = "center";
+      bar.style.gap = "2px";
+      bar.createSpan().setText(item.title);
+      if ((item.notePaths ?? []).length > 0) {
+        const linkIcon = bar.createSpan("calendar-event-note-link");
+        linkIcon.setAttribute("aria-label", "打开关联笔记");
+        linkIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+        linkIcon.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          ev.preventDefault();
+          this.callbacks.onNoteLinkClick?.(item);
+        });
+      }
       bar.style.setProperty("--event-color", this.calendarStore.getCalendars().find((c) => c.id === item.calendarId)?.color ?? "var(--interactive-accent)");
       makeEventDraggable(bar, item);
       bar.addEventListener("click", (ev) => {
@@ -207,7 +221,21 @@ export class WeekView {
             });
           },
         });
-        bar.createDiv("calendar-week-event-bar-title").setText(e.title);
+        const titleWrap = bar.createDiv("calendar-week-event-bar-title");
+        titleWrap.style.display = "flex";
+        titleWrap.style.alignItems = "center";
+        titleWrap.style.gap = "2px";
+        titleWrap.createSpan().setText(e.title);
+        if ((e.notePaths ?? []).length > 0) {
+          const linkIcon = titleWrap.createSpan("calendar-event-note-link");
+          linkIcon.setAttribute("aria-label", "打开关联笔记");
+          linkIcon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+          linkIcon.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            ev.preventDefault();
+            this.callbacks.onNoteLinkClick?.(e, ev);
+          });
+        }
         const timeStr = `${start.getHours()}:${String(start.getMinutes()).padStart(2, "0")}-${end.getHours()}:${String(end.getMinutes()).padStart(2, "0")}`;
         bar.createDiv("calendar-day-event-bar-time").setText(timeStr);
         bar.addEventListener("click", (ev) => {

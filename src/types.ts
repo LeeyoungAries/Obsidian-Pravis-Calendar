@@ -7,7 +7,7 @@ export interface Event {
   location: string;
   notes: string;
   calendarId: string;
-  notePath: string;
+  notePaths: string[];
   type: "event" | "todo";
   completed: boolean;
 }

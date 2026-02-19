@@ -590,6 +590,34 @@
   cursor: pointer;
 }
 
+.calendar-event-note-link {
+  margin-left: 4px;
+  opacity: 0.7;
+  cursor: pointer;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+.calendar-event-note-link:hover {
+  opacity: 1;
+}
+
+.calendar-note-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  background: var(--background-secondary-alt);
+  border-radius: 4px;
+}
+.calendar-note-chip-del {
+  cursor: pointer;
+  opacity: 0.7;
+}
+.calendar-note-chip-del:hover {
+  opacity: 1;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
   .obsidian-calendar-toolbar {

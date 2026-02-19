@@ -1,8 +1,7 @@
-import { ItemView, Scope, type WorkspaceLeaf } from "obsidian";
+import { ItemView, Scope, Menu, type WorkspaceLeaf } from "obsidian";
 import type { EventStore } from "../store/EventStore";
 import type { CalendarStore } from "../store/CalendarStore";
-import type { PluginSettings } from "../types";
-import type { ViewMode } from "../types";
+import type { Event, PluginSettings, ViewMode } from "../types";
 import { MonthView } from "./MonthView";
 import { DayView } from "./DayView";
 import { WeekView } from "./WeekView";
@@ -81,6 +80,26 @@ export class CalendarView extends ItemView {
     this.eventStore.off("change", this.changeHandler);
     if (this.scope && this.undoHandler) this.scope.unregister(this.undoHandler);
     if (this.scope && this.redoHandler) this.scope.unregister(this.redoHandler);
+  }
+
+  private openNoteLinks(event: Event, ev?: MouseEvent): void {
+    const paths = event.notePaths ?? [];
+    const files = paths
+      .map((p) => this.app.vault.getAbstractFileByPath(p))
+      .filter((f): f is import("obsidian").TFile => f != null);
+    if (files.length === 0) return;
+    if (files.length === 1) {
+      this.app.workspace.getLeaf().openFile(files[0]);
+      return;
+    }
+    const menu = new Menu();
+    files.forEach((file) => {
+      menu.addItem((item) =>
+        item.setTitle(file.path).onClick(() => this.app.workspace.getLeaf().openFile(file))
+      );
+    });
+    if (ev) menu.showAtMouseEvent(ev);
+    else menu.showAtPosition({ x: 0, y: 0 });
   }
 
   private openEventModal(mode: "create" | "edit", initialDate?: Date, event?: Parameters<typeof EventModal>[2]["event"]): void {
@@ -176,6 +195,7 @@ export class CalendarView extends ItemView {
             });
             dayModal.open();
           },
+          onNoteLinkClick: (e, ev) => this.openNoteLinks(e, ev),
           onCreate: (start, end) => {
             const cal = this.calendarStore.getCalendars().find((c) => c.visible) ?? this.calendarStore.getCalendars()[0];
             this.eventStore.addEvent({
@@ -186,7 +206,7 @@ export class CalendarView extends ItemView {
               location: "",
               notes: "",
               calendarId: cal?.id ?? "cal_default",
-              notePath: "",
+              notePaths: [],
               type: "event",
               completed: false,
             });
@@ -206,6 +226,7 @@ export class CalendarView extends ItemView {
           onEventDblClick: (e) => this.openEventModal("edit", undefined, e),
           selectedEventId: this.selectedEventId,
           onSlotClick: (date) => this.openEventModal("create", date),
+          onNoteLinkClick: (e, ev) => this.openNoteLinks(e, ev),
           onCreate: (start, end) => {
             const cal = this.calendarStore.getCalendars().find((c) => c.visible) ?? this.calendarStore.getCalendars()[0];
             this.eventStore.addEvent({
@@ -216,7 +237,7 @@ export class CalendarView extends ItemView {
               location: "",
               notes: "",
               calendarId: cal?.id ?? "cal_default",
-              notePath: "",
+              notePaths: [],
               type: "event",
               completed: false,
             });
@@ -237,6 +258,7 @@ export class CalendarView extends ItemView {
           onEventDblClick: (e) => this.openEventModal("edit", undefined, e),
           selectedEventId: this.selectedEventId,
           onSlotClick: (date) => this.openEventModal("create", date),
+          onNoteLinkClick: (e, ev) => this.openNoteLinks(e, ev),
           onCreate: (start, end) => {
             const cal = this.calendarStore.getCalendars().find((c) => c.visible) ?? this.calendarStore.getCalendars()[0];
             this.eventStore.addEvent({
@@ -247,7 +269,7 @@ export class CalendarView extends ItemView {
               location: "",
               notes: "",
               calendarId: cal?.id ?? "cal_default",
-              notePath: "",
+              notePaths: [],
               type: "event",
               completed: false,
             });

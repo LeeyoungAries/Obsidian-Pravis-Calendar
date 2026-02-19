@@ -202,6 +202,42 @@ Obsidian 日历插件。跨天全天任务在月视图中需显示为连续横�
 
 ---
 
+## 关联笔记优化 Prompt（NOTE_LINK_OPTIMIZATION.md）
+
+将以下内容复制给 AI 编码助手，用于执行 NOTE_LINK_OPTIMIZATION.md 中的关联笔记功能优化。
+
+```
+# 角色
+你是 Obsidian 插件开发工程师。请按 NOTE_LINK_OPTIMIZATION.md 完成关联笔记功能优化。
+
+# 项目
+Obsidian 日历插件。需实现：多条关联笔记、双链格式添加、事件 grid 上点击跳转。
+
+# 规范
+- 技术栈：TypeScript，原生 DOM
+- 代码：正式、紧凑，无 emoji
+
+# 任务
+按 NOTE_LINK_OPTIMIZATION.md 实施，顺序如下：
+
+1. 数据层：types.ts 将 notePath 改为 notePaths: string[]；EventStore.load 迁移旧 notePath；CalendarView 新建事件时传 notePaths: []
+
+2. 新建 src/utils/wikiLink.ts：parseWikiLinks(text) 用正则提取 [[xxx]] 中的 linkpath，返回去重数组
+
+3. EventModal：多笔记 UI（标签列表 + 删除）、输入框支持输入 [[note]] 并解析、+ 选择按钮追加、保存时提交 notePaths
+
+4. DayView、WeekView、MonthView：事件条/chip 在 notePaths.length > 0 时显示链接图标；点击图标阻止冒泡并跳转（单条直接打开，多条用 Menu 或 SuggestModal 选择）
+
+5. styles.css：添加 .calendar-event-note-link 样式
+
+# 产出
+- 事件可关联任意多条笔记
+- 支持 [[note]] 双链格式添加
+- 事件 grid 上点击链接图标可跳转到关联笔记
+```
+
+---
+
 ## 撤销功能 Prompt（DEV_PLAN.md 下期）
 
 ```

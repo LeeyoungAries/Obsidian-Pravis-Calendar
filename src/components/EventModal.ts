@@ -3,6 +3,7 @@ import type { EventStore } from "../store/EventStore";
 import type { CalendarStore } from "../store/CalendarStore";
 import type { Event } from "../types";
 import { NoteSuggestModal } from "./NoteSuggestModal";
+import { parseWikiLinks } from "../utils/wikiLink";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -93,30 +94,55 @@ export class EventModal extends Modal {
     calendarSelect.style.marginBottom = "0.5rem";
 
     form.createEl("label", { text: "关联笔记" }).style.display = "block";
-    const noteRow = form.createDiv("calendar-form-row");
-    noteRow.style.marginBottom = "0.5rem";
-    noteRow.style.display = "flex";
-    noteRow.style.gap = "0.5rem";
-    const noteInput = noteRow.createEl("input", { type: "text" });
-    noteInput.placeholder = "选择笔记";
-    noteInput.value = ev?.notePath ?? "";
+    let notePaths: string[] = [...(ev?.notePaths ?? [])];
+    const noteChipsWrap = form.createDiv("calendar-note-chips");
+    noteChipsWrap.style.marginBottom = "0.5rem";
+    noteChipsWrap.style.display = "flex";
+    noteChipsWrap.style.flexWrap = "wrap";
+    noteChipsWrap.style.gap = "4px";
+    const renderNoteChips = () => {
+      noteChipsWrap.empty();
+      notePaths.forEach((path, i) => {
+        const chip = noteChipsWrap.createDiv("calendar-note-chip");
+        chip.createSpan().setText(path);
+        const del = chip.createSpan("calendar-note-chip-del");
+        del.setText("x");
+        del.addEventListener("click", (e) => {
+          e.stopPropagation();
+          notePaths = notePaths.filter((_, j) => j !== i);
+          renderNoteChips();
+        });
+      });
+    };
+    renderNoteChips();
+    const noteInputRow = form.createDiv("calendar-form-row");
+    noteInputRow.style.marginBottom = "0.5rem";
+    noteInputRow.style.display = "flex";
+    noteInputRow.style.gap = "0.5rem";
+    const noteInput = noteInputRow.createEl("input", { type: "text" });
+    noteInput.placeholder = "输入 [[note]] 或点击选择";
     noteInput.style.flex = "1";
-    const noteBtn = noteRow.createEl("button", { text: "选择" });
-    noteBtn.addEventListener("click", () => {
+    const parseAndAppend = () => {
+      const links = parseWikiLinks(noteInput.value);
+      links.forEach((linkpath) => {
+        const dest = this.app.metadataCache.getFirstLinkpathDest(linkpath, "");
+        if (dest?.path && !notePaths.includes(dest.path)) notePaths.push(dest.path);
+      });
+      noteInput.value = "";
+      renderNoteChips();
+    };
+    noteInput.addEventListener("blur", parseAndAppend);
+    noteInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { parseAndAppend(); e.preventDefault(); }
+    });
+    const noteAddBtn = noteInputRow.createEl("button", { text: "+ 选择" });
+    noteAddBtn.addEventListener("click", () => {
       const files = this.app.vault.getMarkdownFiles();
       new NoteSuggestModal(this.app, files, (file) => {
-        noteInput.value = file.path;
+        if (!notePaths.includes(file.path)) notePaths.push(file.path);
+        renderNoteChips();
       }).open();
     });
-    const noteClearBtn = noteRow.createEl("button", { text: "清除" });
-    noteClearBtn.addEventListener("click", () => { noteInput.value = ""; });
-    if (ev?.notePath?.trim()) {
-      const openNoteBtn = noteRow.createEl("button", { text: "打开" });
-      openNoteBtn.addEventListener("click", () => {
-        const file = this.app.vault.getAbstractFileByPath(ev!.notePath);
-        if (file) this.app.workspace.getLeaf().openFile(file);
-      });
-    }
 
     form.createEl("label", { text: "地点" }).style.display = "block";
     const locationInput = form.createEl("input", { type: "text" });
@@ -183,11 +209,11 @@ export class EventModal extends Modal {
       const location = locationInput.value.trim();
       const notes = notesInput.value.trim();
       const calendarId = calendarSelect.value;
-      const notePath = noteInput.value.trim();
+      parseAndAppend();
       const type = typeSelect.value as "event" | "todo";
       const completed = type === "todo" ? completedCheck.checked : false;
       if (isEdit && ev) {
-        this.eventStore.updateEvent(ev.id, { title, start: startStr, end: endStr, allDay, location, notes, calendarId, notePath, type, completed });
+        this.eventStore.updateEvent(ev.id, { title, start: startStr, end: endStr, allDay, location, notes, calendarId, notePaths, type, completed });
       } else {
         this.eventStore.addEvent({
           title,
@@ -197,7 +223,7 @@ export class EventModal extends Modal {
           location,
           notes,
           calendarId,
-          notePath,
+          notePaths,
           type,
           completed,
         });
