@@ -162,3 +162,49 @@ Obsidian 日历插件。需实现：拖拽过程可视化（鼠标未释放前�
 - 拖拽创建：有 overlay 选区预览，15 分钟粒度
 - 时间轴标签保持整点，仅交互 15 分钟
 ```
+
+---
+
+## 月视图全天任务优化 Prompt（DEV_PLAN.md）
+
+将以下内容复制给 AI 编码助手，用于执行 DEV_PLAN.md 中的月视图全天任务显示优化。
+
+```
+# 角色
+你是 Obsidian 插件开发工程师。请按 DEV_PLAN.md 完成月视图全天任务显示优化。
+
+# 项目
+Obsidian 日历插件。跨天全天任务在月视图中需显示为连续横条，对齐 iOS 月视图。
+
+# 规范
+- 技术栈：TypeScript，原生 DOM
+- 代码：正式、紧凑，无 emoji
+
+# 任务
+按 DEV_PLAN.md 当前迭代执行：
+
+1. 排查 MonthView、monthAllDayLayout、calendar-month-bars-overlay 的渲染逻辑，确认跨天任务是否被按天拆分；若存在拆分则修复为单条渲染
+
+2. 确保单条跨天任务只渲染一个 DOM 元素，grid-column、grid-row 正确跨格；computeMonthAllDayLayout 已输出 startRow/startCol/endRow/endCol，检查应用是否正确
+
+3. 文案：任务名在条内左对齐，超长用 text-overflow: ellipsis；至少首格内完整显示
+
+4. 样式：首尾圆角（border-radius 仅首尾格）、中间无断点；条与网格对齐，无错位
+
+5. 重叠任务垂直堆叠（layer），全天条与 timed 事件区域（margin-top）分离
+
+# 产出
+- 跨 2 天及以上全天任务为一条连续横条
+- 任务名在条内可见
+- 重叠任务垂直堆叠，无遮挡
+- 全天条与 timed 区域分离
+```
+
+---
+
+## 撤销功能 Prompt（DEV_PLAN.md 下期）
+
+```
+# 任务
+按 DEV_PLAN.md 撤销功能迭代执行：EventStore 操作历史栈、undo/redo 逻辑、Command+Z/Command+Shift+Z 快捷键、栈深度限制 20–50 步。
+```

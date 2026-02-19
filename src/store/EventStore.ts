@@ -5,6 +5,9 @@ import { DEFAULT_CALENDAR_COLOR } from "../constants/colors";
 
 const DATA_PATH = ".obsidian/calendar-events.json";
 const SAVE_DEBOUNCE_MS = 300;
+const HISTORY_MAX_SIZE = 30;
+
+type HistoryEntry = { undo: () => void; redo: () => void };
 
 const DEFAULT_CALENDAR: Calendar = {
   id: "cal_default",
@@ -25,6 +28,8 @@ export class EventStore {
   private data: CalendarData = { ...DEFAULT_DATA, calendars: { ...DEFAULT_DATA.calendars } };
   private saveTimer: ReturnType<typeof setTimeout> | null = null;
   private handlers: Set<ChangeHandler> = new Set();
+  private undoStack: HistoryEntry[] = [];
+  private redoStack: HistoryEntry[] = [];
 
   constructor(app: App) {
     this.app = app;
@@ -40,6 +45,8 @@ export class EventStore {
     } catch {
       this.data = { ...DEFAULT_DATA, calendars: { ...DEFAULT_DATA.calendars } };
     }
+    this.undoStack = [];
+    this.redoStack = [];
     this.emit();
   }
 
@@ -88,6 +95,12 @@ export class EventStore {
     const id = generateEventId();
     const full: Event = { ...event, id };
     this.data.events.push(full);
+    this.redoStack = [];
+    this.undoStack.push({
+      undo: () => this._deleteEventDirect(id),
+      redo: () => this._addEventDirect(full),
+    });
+    this.trimHistory();
     this.scheduleSave();
     this.emit();
     return full;
@@ -96,19 +109,82 @@ export class EventStore {
   updateEvent(id: string, partial: Partial<Event>): Event | null {
     const idx = this.data.events.findIndex((e) => e.id === id);
     if (idx < 0) return null;
-    this.data.events[idx] = { ...this.data.events[idx], ...partial };
+    const prev = { ...this.data.events[idx] };
+    this.data.events[idx] = { ...prev, ...partial };
+    const next = this.data.events[idx];
+    this.redoStack = [];
+    this.undoStack.push({
+      undo: () => this._updateEventDirect(id, prev),
+      redo: () => this._updateEventDirect(id, next),
+    });
+    this.trimHistory();
     this.scheduleSave();
     this.emit();
-    return this.data.events[idx];
+    return next;
   }
 
   deleteEvent(id: string): boolean {
     const idx = this.data.events.findIndex((e) => e.id === id);
     if (idx < 0) return false;
+    const removed = { ...this.data.events[idx] };
     this.data.events.splice(idx, 1);
+    this.redoStack = [];
+    this.undoStack.push({
+      undo: () => this._addEventDirect(removed),
+      redo: () => this._deleteEventDirect(id),
+    });
+    this.trimHistory();
     this.scheduleSave();
     this.emit();
     return true;
+  }
+
+  undo(): boolean {
+    const entry = this.undoStack.pop();
+    if (!entry) return false;
+    entry.undo();
+    this.redoStack.push(entry);
+    this.scheduleSave();
+    this.emit();
+    return true;
+  }
+
+  redo(): boolean {
+    const entry = this.redoStack.pop();
+    if (!entry) return false;
+    entry.redo();
+    this.undoStack.push(entry);
+    this.scheduleSave();
+    this.emit();
+    return true;
+  }
+
+  canUndo(): boolean {
+    return this.undoStack.length > 0;
+  }
+
+  canRedo(): boolean {
+    return this.redoStack.length > 0;
+  }
+
+  private _addEventDirect(event: Event): void {
+    this.data.events.push({ ...event });
+  }
+
+  private _updateEventDirect(id: string, full: Event): void {
+    const idx = this.data.events.findIndex((e) => e.id === id);
+    if (idx >= 0) this.data.events[idx] = { ...full };
+  }
+
+  private _deleteEventDirect(id: string): void {
+    const idx = this.data.events.findIndex((e) => e.id === id);
+    if (idx >= 0) this.data.events.splice(idx, 1);
+  }
+
+  private trimHistory(): void {
+    if (this.undoStack.length > HISTORY_MAX_SIZE) {
+      this.undoStack = this.undoStack.slice(-HISTORY_MAX_SIZE);
+    }
   }
 
   getCalendars(): Calendar[] {

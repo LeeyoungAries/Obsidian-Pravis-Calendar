@@ -203,7 +203,6 @@ export class EventModal extends Modal {
         });
       }
       this.close();
-      this.afterClose?.();
     });
 
     const cancelBtn = btnRow.createEl("button", { text: "取消" });
@@ -217,7 +216,6 @@ export class EventModal extends Modal {
       deleteBtn.addEventListener("click", () => {
         this.eventStore.deleteEvent(ev.id);
         this.close();
-        this.afterClose?.();
       });
     }
   }

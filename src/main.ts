@@ -36,6 +36,32 @@ export default class CalendarPlugin extends Plugin {
       callback: () => this.activateView(),
     });
 
+    this.addCommand({
+      id: "calendar-undo",
+      name: "日历: 撤销",
+      hotkeys: [{ modifiers: ["Mod"], key: "z" }],
+      checkCallback: (checking) => {
+        const leaf = this.app.workspace.activeLeaf;
+        const inCalendar = leaf?.view?.getViewType?.() === VIEW_TYPE_CALENDAR;
+        if (!inCalendar || !this.eventStore.canUndo()) return false;
+        if (checking) return true;
+        this.eventStore.undo();
+      },
+    });
+
+    this.addCommand({
+      id: "calendar-redo",
+      name: "日历: 重做",
+      hotkeys: [{ modifiers: ["Mod", "Shift"], key: "z" }],
+      checkCallback: (checking) => {
+        const leaf = this.app.workspace.activeLeaf;
+        const inCalendar = leaf?.view?.getViewType?.() === VIEW_TYPE_CALENDAR;
+        if (!inCalendar || !this.eventStore.canRedo()) return false;
+        if (checking) return true;
+        this.eventStore.redo();
+      },
+    });
+
     this.addSettingTab(
       new CalendarSettingTab(this.app, this, this.calendarStore, () => this.settings, (s) => this.saveSettings(s))
     );

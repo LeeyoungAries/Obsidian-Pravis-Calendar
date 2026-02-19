@@ -1,4 +1,4 @@
-import { ItemView, type WorkspaceLeaf } from "obsidian";
+import { ItemView, Scope, type WorkspaceLeaf } from "obsidian";
 import type { EventStore } from "../store/EventStore";
 import type { CalendarStore } from "../store/CalendarStore";
 import type { PluginSettings } from "../types";
@@ -26,6 +26,9 @@ export class CalendarView extends ItemView {
   private viewMode: ViewMode;
   private selectedEventId: string | null = null;
   private changeHandler = () => this.render();
+  private scrollToTodayInWeek = false;
+  private undoHandler: ReturnType<Scope["register"]> | null = null;
+  private redoHandler: ReturnType<Scope["register"]> | null = null;
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -40,6 +43,21 @@ export class CalendarView extends ItemView {
     this.currentDate = new Date();
     this.viewMode = settings.defaultView;
     this.containerEl = this.contentEl.createDiv("obsidian-calendar-container");
+    this.scope = new Scope(this.app.scope);
+    this.undoHandler = this.scope.register(["Mod"], "z", () => {
+      if (this.eventStore.canUndo()) {
+        this.eventStore.undo();
+        return true;
+      }
+      return false;
+    });
+    this.redoHandler = this.scope.register(["Mod", "Shift"], "z", () => {
+      if (this.eventStore.canRedo()) {
+        this.eventStore.redo();
+        return true;
+      }
+      return false;
+    });
   }
 
   getViewType(): string {
@@ -61,11 +79,17 @@ export class CalendarView extends ItemView {
 
   async onClose(): Promise<void> {
     this.eventStore.off("change", this.changeHandler);
+    if (this.scope && this.undoHandler) this.scope.unregister(this.undoHandler);
+    if (this.scope && this.redoHandler) this.scope.unregister(this.redoHandler);
   }
 
   private openEventModal(mode: "create" | "edit", initialDate?: Date, event?: Parameters<typeof EventModal>[2]["event"]): void {
+    this.eventStore.off("change", this.changeHandler);
     const modal = new EventModal(this.app, this.eventStore, this.calendarStore, { mode, initialDate, event });
-    modal.afterClose = () => this.render();
+    modal.afterClose = () => {
+      this.eventStore.on("change", this.changeHandler);
+      this.render();
+    };
     modal.open();
   }
 
@@ -107,6 +131,7 @@ export class CalendarView extends ItemView {
     const todayBtn = toolbar.createEl("button", { text: "今天" });
     todayBtn.addEventListener("click", () => {
       this.currentDate = new Date();
+      this.scrollToTodayInWeek = true;
       this.render();
     });
 
@@ -116,6 +141,7 @@ export class CalendarView extends ItemView {
     const calFilter = toolbar.createDiv("calendar-filter");
     this.calendarStore.getCalendars().forEach((cal) => {
       const btn = calFilter.createEl("button");
+      btn.style.setProperty("--cal-color", cal.color);
       btn.style.borderLeft = `3px solid ${cal.color}`;
       btn.style.paddingLeft = "0.5rem";
       btn.setText(cal.name);
@@ -251,7 +277,17 @@ export class CalendarView extends ItemView {
           newContentArea.scrollLeft = savedScrollLeft;
         }
         if (newScrollWrapper instanceof HTMLElement) {
-          if (wasWeekView) {
+          if (this.scrollToTodayInWeek) {
+            this.scrollToTodayInWeek = false;
+            const now = new Date();
+            const currentHourY = (now.getHours() + now.getMinutes() / 60) * SLOT_HEIGHT;
+            const visibleH = newScrollWrapper.clientHeight;
+            newScrollWrapper.scrollTop = Math.max(0, currentHourY - visibleH / 2 + SLOT_HEIGHT / 2);
+            const todayCol = newScrollWrapper.querySelector(".calendar-col-today")?.closest(".calendar-week-col");
+            if (todayCol && todayCol instanceof HTMLElement) {
+              todayCol.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+            }
+          } else if (wasWeekView) {
             newScrollWrapper.scrollTop = savedScrollWrapperTop;
             newScrollWrapper.scrollLeft = savedScrollWrapperLeft;
           } else {

@@ -551,6 +551,11 @@
 .calendar-filter button {
   font-size: 0.75rem;
   padding: 0.2rem 0.4rem;
+  background: color-mix(in srgb, var(--cal-color, var(--interactive-accent)) 22%, var(--background-secondary));
+}
+
+.calendar-filter button:hover {
+  background: color-mix(in srgb, var(--cal-color, var(--interactive-accent)) 32%, var(--background-secondary));
 }
 
 .calendar-filter-hidden {
