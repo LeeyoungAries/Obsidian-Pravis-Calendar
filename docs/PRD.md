@@ -40,7 +40,7 @@
 
 ### 3.1 存储方案
 
-- 路径：`.obsidian/calendar-events.json`
+- 路径：`.obsidian/pravis-calendar-events.json`
 - 格式：JSON
 - 管理：插件全权读写
 

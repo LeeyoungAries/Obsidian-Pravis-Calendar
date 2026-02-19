@@ -43,7 +43,7 @@ src/
 ### 3.1 数据层 (Store)
 
 **EventStore**
-- `load()`: 从 `.obsidian/calendar-events.json` 读取
+- `load()`: 从 `.obsidian/pravis-calendar-events.json` 读取
 - `save()`: 写入 JSON，防抖 300ms
 - `getEvents(start, end)`: 按时间范围查询
 - `addEvent(event)`: 新增，自动生成 id

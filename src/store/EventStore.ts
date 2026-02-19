@@ -3,7 +3,7 @@ import type { Event, Calendar, CalendarData } from "../types";
 import { generateEventId, generateCalendarId } from "../utils/id";
 import { DEFAULT_CALENDAR_COLOR } from "../constants/colors";
 
-const DATA_PATH = ".obsidian/calendar-events.json";
+const DATA_PATH = ".obsidian/pravis-calendar-events.json";
 const SAVE_DEBOUNCE_MS = 300;
 const HISTORY_MAX_SIZE = 30;
 

@@ -11,7 +11,7 @@
 你是 Obsidian 插件开发工程师。请按项目规范完成开发任务。
 
 # 项目
-Obsidian 日历插件，迁移 iOS 日历核心能力。以事件为中心，支持日/周/月视图、拖拽调度、多日历、笔记链接、Todo 类型。数据存于 .obsidian/calendar-events.json。
+Obsidian 日历插件，迁移 iOS 日历核心能力。以事件为中心，支持日/周/月视图、拖拽调度、多日历、笔记链接、Todo 类型。数据存于 .obsidian/pravis-calendar-events.json。
 
 # 规范
 - 技术栈：TypeScript + esbuild，原生 DOM，无 React/Vue
@@ -21,7 +21,7 @@ Obsidian 日历插件，迁移 iOS 日历核心能力。以事件为中心，支
 - 代码：正式、紧凑，无 emoji
 
 # 任务
-按 SCHEDULE.md 的 Day 1 执行：
+按 docs/SCHEDULE.md 的 Day 1 执行：
 1. 初始化项目（manifest.json, package.json, tsconfig.json, esbuild 构建）
 2. 定义 Event/Calendar 类型（types.ts）
 3. 实现 EventStore（JSON 读写、CRUD、防抖 save）
@@ -31,7 +31,7 @@ Obsidian 日历插件，迁移 iOS 日历核心能力。以事件为中心，支
 
 # 产出
 - 可 npm run build 成功
-- 复制 main.js、manifest.json、styles.css 到 vault/.obsidian/plugins/obsidian-calendar/ 后可加载
+- 复制 main.js、manifest.json、styles.css 到 vault/.obsidian/plugins/obsidian-pravis-calendar/ 后可加载
 - 侧边栏可打开日历面板
 - 可创建事件并持久化到 JSON
 ```
@@ -45,54 +45,54 @@ Obsidian 日历插件，迁移 iOS 日历核心能力。以事件为中心，支
 **Day 2-3：**
 ```
 # 任务
-按 SCHEDULE.md Day 2-3 执行：MonthView 月历网格、事件展示、EventModal 创建/编辑/删除、日期导航。
+按 docs/SCHEDULE.md Day 2-3 执行：MonthView 月历网格、事件展示、EventModal 创建/编辑/删除、日期导航。
 ```
 
 **Day 4-5：**
 ```
 # 任务
-按 SCHEDULE.md Day 4-5 执行：DayView、WeekView、视图切换、全天事件、EventModal 完整表单。
+按 docs/SCHEDULE.md Day 4-5 执行：DayView、WeekView、视图切换、全天事件、EventModal 完整表单。
 ```
 
 **Day 6：**
 ```
 # 任务
-按 SCHEDULE.md Day 6 执行：EventCard 拖拽（月/日/周视图）、多日历管理、日历筛选。
+按 docs/SCHEDULE.md Day 6 执行：EventCard 拖拽（月/日/周视图）、多日历管理、日历筛选。
 ```
 
 **Day 7：**
 ```
 # 任务
-按 SCHEDULE.md Day 7 执行：笔记选择器、[[event:id]] 解析、Todo 类型与完成状态、样式区分。
+按 docs/SCHEDULE.md Day 7 执行：笔记选择器、[[event:id]] 解析、Todo 类型与完成状态、样式区分。
 ```
 
 **Day 8：**
 ```
 # 任务
-按 SCHEDULE.md Day 8 执行：全流程联调、边界 case 修复、按 PRD 验收标准 checklist 验收。
+按 docs/SCHEDULE.md Day 8 执行：全流程联调、边界 case 修复、按 PRD 验收标准 checklist 验收。
 ```
 
 ---
 
-## 体验修复 Prompt（FIX_PLAN.md）
+## 体验修复 Prompt（docs/FIX_PLAN.md）
 
-将以下内容复制给 AI 编码助手，用于执行 FIX_PLAN.md 中的体验修复。
+将以下内容复制给 AI 编码助手，用于执行 docs/FIX_PLAN.md 中的体验修复。
 
 ### P0 阶段（优先）
 
 ```
 # 角色
-你是 Obsidian 插件开发工程师。请按 FIX_PLAN.md 完成体验修复。
+你是 Obsidian 插件开发工程师。请按 docs/FIX_PLAN.md 完成体验修复。
 
 # 项目
-Obsidian 日历插件，需对齐 iOS 日历使用体验。详见 FIX_PLAN.md。
+Obsidian 日历插件，需对齐 iOS 日历使用体验。详见 docs/FIX_PLAN.md。
 
 # 规范
 - 技术栈：TypeScript，原生 DOM
 - 代码：正式、紧凑，无 emoji
 
 # 任务
-按 FIX_PLAN.md P0 执行：
+按 docs/FIX_PLAN.md P0 执行：
 1. 问题 2：重叠事件布局。新建 utils/overlapLayout.ts，实现 overlap 算法，为每个事件计算 column、totalColumns；修改 DayView、WeekView 中 timed 事件的渲染，按 width/left 并排显示
 2. 问题 3：固定表头。日视图全天区域、周视图表头与全天区域、周视图时间轴，使用 position: sticky，确保滚动时始终可见；调整 DOM 与滚动容器结构
 
@@ -105,7 +105,7 @@ Obsidian 日历插件，需对齐 iOS 日历使用体验。详见 FIX_PLAN.md。
 
 ```
 # 任务
-按 FIX_PLAN.md P1 执行：
+按 docs/FIX_PLAN.md P1 执行：
 1. 拖拽创建：DayView/WeekView 的 slot 上 mousedown→mousemove→mouseup，有位移时按起止 slot 创建事件，无位移则保持 onSlotClick 打开弹窗
 2. 拖拽调整时长：事件条底部增加可拖拽区域，mousedown→document mousemove→mouseup，根据 Y 变化更新 end 时间
 ```
@@ -114,25 +114,25 @@ Obsidian 日历插件，需对齐 iOS 日历使用体验。详见 FIX_PLAN.md。
 
 ```
 # 任务
-按 FIX_PLAN.md P2 执行：当前时间线、打开日/周视图时滚动到当前时间、拖拽创建时的选区视觉反馈。
+按 docs/FIX_PLAN.md P2 执行：当前时间线、打开日/周视图时滚动到当前时间、拖拽创建时的选区视觉反馈。
 ```
 
 ### P3 阶段
 
 ```
 # 任务
-按 FIX_PLAN.md P3 执行：月视图拖拽创建、短事件最小高度 28-32px。
+按 docs/FIX_PLAN.md P3 执行：月视图拖拽创建、短事件最小高度 28-32px。
 ```
 
 ---
 
-## 拖拽体验优化 Prompt（DRAG_UX_DESIGN.md）
+## 拖拽体验优化 Prompt（docs/DRAG_UX_DESIGN.md）
 
-将以下内容复制给 AI 编码助手，用于执行 DRAG_UX_DESIGN.md 中的拖拽体验优化。
+将以下内容复制给 AI 编码助手，用于执行 docs/DRAG_UX_DESIGN.md 中的拖拽体验优化。
 
 ```
 # 角色
-你是 Obsidian 插件开发工程师。请按 DRAG_UX_DESIGN.md 完成拖拽体验优化。
+你是 Obsidian 插件开发工程师。请按 docs/DRAG_UX_DESIGN.md 完成拖拽体验优化。
 
 # 项目
 Obsidian 日历插件。需实现：拖拽过程可视化（鼠标未释放前可见目标位置/大小）、时间粒度从 1 小时改为 15 分钟。
@@ -142,7 +142,7 @@ Obsidian 日历插件。需实现：拖拽过程可视化（鼠标未释放前�
 - 代码：正式、紧凑，无 emoji
 
 # 任务
-按 DRAG_UX_DESIGN.md 实施，顺序如下：
+按 docs/DRAG_UX_DESIGN.md 实施，顺序如下：
 
 1. 新建 utils/timeSlot.ts：yToMinutes、minutesToY、snapToSlot，15 分钟粒度（SLOTS_PER_HOUR=4）
 
@@ -165,13 +165,13 @@ Obsidian 日历插件。需实现：拖拽过程可视化（鼠标未释放前�
 
 ---
 
-## 月视图全天任务优化 Prompt（DEV_PLAN.md）
+## 月视图全天任务优化 Prompt（docs/DEV_PLAN.md）
 
-将以下内容复制给 AI 编码助手，用于执行 DEV_PLAN.md 中的月视图全天任务显示优化。
+将以下内容复制给 AI 编码助手，用于执行 docs/DEV_PLAN.md 中的月视图全天任务显示优化。
 
 ```
 # 角色
-你是 Obsidian 插件开发工程师。请按 DEV_PLAN.md 完成月视图全天任务显示优化。
+你是 Obsidian 插件开发工程师。请按 docs/DEV_PLAN.md 完成月视图全天任务显示优化。
 
 # 项目
 Obsidian 日历插件。跨天全天任务在月视图中需显示为连续横条，对齐 iOS 月视图。
@@ -181,7 +181,7 @@ Obsidian 日历插件。跨天全天任务在月视图中需显示为连续横�
 - 代码：正式、紧凑，无 emoji
 
 # 任务
-按 DEV_PLAN.md 当前迭代执行：
+按 docs/DEV_PLAN.md 当前迭代执行：
 
 1. 排查 MonthView、monthAllDayLayout、calendar-month-bars-overlay 的渲染逻辑，确认跨天任务是否被按天拆分；若存在拆分则修复为单条渲染
 
@@ -202,13 +202,13 @@ Obsidian 日历插件。跨天全天任务在月视图中需显示为连续横�
 
 ---
 
-## 关联笔记优化 Prompt（NOTE_LINK_OPTIMIZATION.md）
+## 关联笔记优化 Prompt（docs/NOTE_LINK_OPTIMIZATION.md）
 
-将以下内容复制给 AI 编码助手，用于执行 NOTE_LINK_OPTIMIZATION.md 中的关联笔记功能优化。
+将以下内容复制给 AI 编码助手，用于执行 docs/NOTE_LINK_OPTIMIZATION.md 中的关联笔记功能优化。
 
 ```
 # 角色
-你是 Obsidian 插件开发工程师。请按 NOTE_LINK_OPTIMIZATION.md 完成关联笔记功能优化。
+你是 Obsidian 插件开发工程师。请按 docs/NOTE_LINK_OPTIMIZATION.md 完成关联笔记功能优化。
 
 # 项目
 Obsidian 日历插件。需实现：多条关联笔记、双链格式添加、事件 grid 上点击跳转。
@@ -218,7 +218,7 @@ Obsidian 日历插件。需实现：多条关联笔记、双链格式添加、�
 - 代码：正式、紧凑，无 emoji
 
 # 任务
-按 NOTE_LINK_OPTIMIZATION.md 实施，顺序如下：
+按 docs/NOTE_LINK_OPTIMIZATION.md 实施，顺序如下：
 
 1. 数据层：types.ts 将 notePath 改为 notePaths: string[]；EventStore.load 迁移旧 notePath；CalendarView 新建事件时传 notePaths: []
 
@@ -238,9 +238,9 @@ Obsidian 日历插件。需实现：多条关联笔记、双链格式添加、�
 
 ---
 
-## 撤销功能 Prompt（DEV_PLAN.md 下期）
+## 撤销功能 Prompt（docs/DEV_PLAN.md 下期）
 
 ```
 # 任务
-按 DEV_PLAN.md 撤销功能迭代执行：EventStore 操作历史栈、undo/redo 逻辑、Command+Z/Command+Shift+Z 快捷键、栈深度限制 20–50 步。
+按 docs/DEV_PLAN.md 撤销功能迭代执行：EventStore 操作历史栈、undo/redo 逻辑、Command+Z/Command+Shift+Z 快捷键、栈深度限制 20–50 步。
 ```

@@ -1,5 +1,5 @@
 {
-  "name": "obsidian-calendar",
+  "name": "obsidian-pravis-calendar",
   "version": "0.1.0",
   "description": "Obsidian calendar plugin with event management",
   "main": "main.js",
