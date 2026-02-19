@@ -60,9 +60,10 @@ export class WeekView {
     const timedEvents = filtered.filter((e) => !e.allDay);
 
     const wrapper = this.containerEl.createDiv("calendar-week-view");
+    const scrollWrapper = wrapper.createDiv("calendar-week-scroll-wrapper");
 
     if (allDayEvents.length > 0) {
-      const allDaySection = wrapper.createDiv("calendar-week-allday");
+      const allDaySection = scrollWrapper.createDiv("calendar-week-allday");
       allDaySection.createDiv("calendar-week-allday-label").setText("全天");
       const allDayGrid = allDaySection.createDiv("calendar-week-allday-grid");
       days.forEach((dayDate) => {
@@ -110,8 +111,10 @@ export class WeekView {
       });
     }
 
-    const timeSection = wrapper.createDiv("calendar-week-timesection");
+    const timeSection = scrollWrapper.createDiv("calendar-week-timesection");
     const timeAxis = timeSection.createDiv("calendar-week-timeaxis");
+    const axisHeader = timeAxis.createDiv("calendar-week-timeaxis-header");
+    axisHeader.setText("\u00A0");
     for (let h = 0; h < HOURS; h++) {
       const slot = timeAxis.createDiv("calendar-week-slot");
       slot.createDiv("calendar-week-slot-label").setText(`${h.toString().padStart(2, "0")}:00`);
@@ -200,5 +203,86 @@ export class WeekView {
         this.callbacks.onCreate ??
         ((start) => this.callbacks.onSlotClick?.(start, start.getHours())),
     });
+
+    requestAnimationFrame(() => {
+      const allday = scrollWrapper.querySelector(".calendar-week-allday");
+      const height = allday instanceof HTMLElement ? allday.offsetHeight : 0;
+      scrollWrapper.style.setProperty("--week-allday-height", `${height}px`);
+    });
+
+    // #region agent log
+    requestAnimationFrame(() => {
+      const contentArea = this.containerEl.closest(".calendar-content-area");
+      const timeSection = scrollWrapper.querySelector(".calendar-week-timesection");
+      const firstHeader = wrapper.querySelector(".calendar-week-col-header");
+      const log = (msg: string, data: Record<string, unknown>) => {
+        fetch("http://127.0.0.1:7244/ingest/b6a1d460-0ba5-4082-811d-b15c11d2bff7", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            location: "WeekView.ts:render",
+            message: msg,
+            data,
+            timestamp: Date.now(),
+            hypothesisId: "A",
+          }),
+        }).catch(() => {});
+      };
+      if (contentArea) {
+        log("contentArea scroll", {
+          scrollHeight: contentArea.scrollHeight,
+          clientHeight: contentArea.clientHeight,
+          scrollTop: contentArea.scrollTop,
+          overflow: getComputedStyle(contentArea).overflow,
+        });
+      }
+      if (timeSection instanceof HTMLElement) {
+        log("timeSection scroll", {
+          scrollHeight: timeSection.scrollHeight,
+          clientHeight: timeSection.clientHeight,
+          scrollTop: timeSection.scrollTop,
+          overflow: getComputedStyle(timeSection).overflow,
+        });
+      }
+      if (firstHeader instanceof HTMLElement) {
+        const cs = getComputedStyle(firstHeader);
+        log("header computed", {
+          position: cs.position,
+          top: cs.top,
+          zIndex: cs.zIndex,
+        });
+        let el: HTMLElement | null = firstHeader.parentElement;
+        const overflowChain: string[] = [];
+        while (el && el !== contentArea) {
+          const o = getComputedStyle(el).overflow;
+          if (o !== "visible") overflowChain.push(`${el.className}:${o}`);
+          el = el.parentElement;
+        }
+        log("header ancestor overflow", { overflowChain });
+      }
+      contentArea?.addEventListener(
+        "scroll",
+        () => {
+          log("scroll contentArea", {
+            scrollTop: (contentArea as HTMLElement).scrollTop,
+            hypothesisId: "C",
+          });
+        },
+        { once: true }
+      );
+      if (timeSection instanceof HTMLElement) {
+        timeSection.addEventListener(
+          "scroll",
+          () => {
+            log("scroll timeSection", {
+              scrollTop: timeSection.scrollTop,
+              hypothesisId: "C",
+            });
+          },
+          { once: true }
+        );
+      }
+    });
+    // #endregion
   }
 }

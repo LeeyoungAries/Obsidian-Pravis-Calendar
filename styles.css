@@ -169,17 +169,30 @@
   flex: 1;
   min-height: 0;
   overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-day-wrapper,
+.calendar-week-wrapper {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .calendar-day-view,
 .calendar-week-view {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-height: 0;
   gap: 0.5rem;
 }
 
 .calendar-allday-section {
   display: flex;
+  flex-shrink: 0;
   gap: 0.5rem;
   padding: 0.5rem;
   border-bottom: 1px solid var(--background-modifier-border);
@@ -279,8 +292,9 @@
 /* Week view */
 .calendar-week-allday {
   display: flex;
+  flex-shrink: 0;
   gap: 0.5rem;
-  padding: 0.5rem;
+  padding: 0.5rem 0;
   border-bottom: 1px solid var(--background-modifier-border);
   position: sticky;
   top: 0;
@@ -297,8 +311,9 @@
 
 .calendar-week-allday-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   flex: 1;
+  min-width: 0;
   gap: 4px;
 }
 
@@ -306,6 +321,8 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
+  border-left: 1px solid var(--background-modifier-border);
 }
 
 .calendar-week-event-chip {
@@ -315,6 +332,7 @@
   border-left: 3px solid var(--interactive-accent);
   background: var(--background-secondary);
   cursor: pointer;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -324,20 +342,41 @@
   background: var(--background-modifier-hover);
 }
 
-.calendar-week-timesection {
-  display: flex;
+.calendar-week-scroll-wrapper {
   flex: 1;
   min-height: 0;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 0 0.5rem;
+  scrollbar-gutter: stable;
+}
+
+.calendar-week-timesection {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.5rem;
 }
 
 .calendar-week-timeaxis {
   flex-shrink: 0;
   width: 3rem;
+  display: flex;
+  flex-direction: column;
   position: sticky;
   left: 0;
   z-index: 1;
   background: var(--background-primary);
+}
+
+.calendar-week-timeaxis-header {
+  flex-shrink: 0;
+  padding: 4px;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  border-bottom: 1px solid var(--background-modifier-border);
+  box-sizing: border-box;
 }
 
 .calendar-week-slot {
@@ -351,9 +390,10 @@
 
 .calendar-week-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   flex: 1;
   min-width: 0;
+  gap: 4px;
 }
 
 .calendar-week-col {
@@ -369,7 +409,7 @@
   padding: 4px;
   border-bottom: 1px solid var(--background-modifier-border);
   position: sticky;
-  top: 0;
+  top: var(--week-allday-height, 0);
   z-index: 1;
   background: var(--background-primary);
 }
