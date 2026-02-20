@@ -2,6 +2,7 @@ import type { Event } from "../types";
 import type { EventStore } from "../store/EventStore";
 import type { CalendarStore } from "../store/CalendarStore";
 import { getMonthGrid, isSameDay, toDateKey } from "../utils/date";
+import { getLunarString } from "../utils/lunar";
 import { makeEventDraggable, makeDropTarget } from "../components/EventCard";
 import { setupMonthViewDragCreate } from "../utils/dragCreate";
 
@@ -90,6 +91,11 @@ export class MonthView {
         const dayNum = cell.createDiv("calendar-cell-day");
         dayNum.setText(String(cellDate.getDate()));
         if (isSameDay(cellDate, today)) dayNum.addClass("calendar-cell-today");
+        const lunarStr = getLunarString(cellDate);
+        if (lunarStr) {
+          const lunarEl = cell.createDiv("calendar-cell-lunar");
+          lunarEl.setText(lunarStr);
+        }
 
         makeDropTarget(cell, (eventId) => {
           const evt = this.eventStore.getEvent(eventId);
@@ -125,6 +131,9 @@ export class MonthView {
           if (e.type === "todo") chip.addClass("calendar-event-todo");
           if (e.completed) chip.addClass("calendar-event-completed");
           if (e.id === this.callbacks.selectedEventId) chip.addClass("calendar-event-selected");
+          if (e.type === "todo") {
+            chip.createSpan("calendar-event-todo-icon").setText(e.completed ? "✅" : "⭕");
+          }
           chip.createSpan().setText(e.title);
           if ((e.notePaths ?? []).length > 0) {
             chip.style.display = "flex";

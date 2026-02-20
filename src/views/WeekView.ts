@@ -2,6 +2,7 @@ import type { Event } from "../types";
 import type { EventStore } from "../store/EventStore";
 import type { CalendarStore } from "../store/CalendarStore";
 import { getWeekDays, isSameDay } from "../utils/date";
+import { getLunarString } from "../utils/lunar";
 import { makeEventDraggable, makeDropTarget } from "../components/EventCard";
 import { computeOverlapLayout } from "../utils/overlapLayout";
 import { computeAllDayLayout } from "../utils/allDayOverlapLayout";
@@ -115,6 +116,9 @@ export class WeekView {
       bar.style.display = "flex";
       bar.style.alignItems = "center";
       bar.style.gap = "2px";
+      if (item.type === "todo") {
+        bar.createSpan("calendar-event-todo-icon").setText(item.completed ? "✅" : "⭕");
+      }
       bar.createSpan().setText(item.title);
       if ((item.notePaths ?? []).length > 0) {
         const linkIcon = bar.createSpan("calendar-event-note-link");
@@ -152,9 +156,11 @@ export class WeekView {
     days.forEach((dayDate) => {
       const col = grid.createDiv("calendar-week-col");
       const header = col.createDiv("calendar-week-col-header");
-      header.setText(
-        `${WEEKDAY_NAMES[dayDate.getDay()]} ${dayDate.getMonth() + 1}/${dayDate.getDate()}`
-      );
+      const lunarStr = getLunarString(dayDate);
+      const headerText = lunarStr
+        ? `${WEEKDAY_NAMES[dayDate.getDay()]} ${dayDate.getMonth() + 1}/${dayDate.getDate()} ${lunarStr}`
+        : `${WEEKDAY_NAMES[dayDate.getDay()]} ${dayDate.getMonth() + 1}/${dayDate.getDate()}`;
+      header.setText(headerText);
       if (isSameDay(dayDate, today)) header.addClass("calendar-col-today");
       const colBody = col.createDiv("calendar-week-col-body");
       colBody.style.position = "relative";
@@ -226,6 +232,9 @@ export class WeekView {
         titleWrap.style.alignItems = "center";
         titleWrap.style.gap = "2px";
         titleWrap.style.minWidth = "0";
+        if (e.type === "todo") {
+          titleWrap.createSpan("calendar-event-todo-icon").setText(e.completed ? "✅" : "⭕");
+        }
         if ((e.notePaths ?? []).length > 0) {
           const linkIcon = titleWrap.createSpan("calendar-event-note-link");
           linkIcon.setAttribute("aria-label", "打开关联笔记");

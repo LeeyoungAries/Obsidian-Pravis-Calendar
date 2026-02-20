@@ -13,19 +13,6 @@
   min-height: 200px;
 }
 
-.obsidian-calendar-header {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 0.5rem;
-  padding-left: 1rem;
-}
-
-.obsidian-calendar-time {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  font-variant-numeric: tabular-nums;
-}
-
 .obsidian-calendar-toolbar {
   display: flex;
   gap: 0.5rem;
@@ -105,6 +92,13 @@
   box-sizing: content-box;
 }
 
+.calendar-cell-lunar {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+
 .calendar-cell-today {
   font-weight: 700;
   color: #ff3b30;
@@ -163,6 +157,9 @@
 }
 
 .calendar-day-event-row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
   padding: 0.5rem;
   border-radius: 4px;
   border: 1px solid var(--background-modifier-border);
@@ -259,8 +256,7 @@
 }
 
 .calendar-event-selected {
-  outline: 2px solid var(--event-color, var(--interactive-accent));
-  outline-offset: 1px;
+  background: color-mix(in srgb, var(--event-color, var(--interactive-accent)) 42%, var(--background-secondary)) !important;
 }
 
 .calendar-day-timesection {
@@ -605,13 +601,10 @@
   border-left-style: dashed !important;
 }
 
-.calendar-event-completed {
-  opacity: 0.7;
-  text-decoration: line-through;
-}
-
-.calendar-event-todo.calendar-event-completed {
-  opacity: 0.5;
+.calendar-event-todo-icon {
+  flex-shrink: 0;
+  font-size: 0.85em;
+  line-height: 1;
 }
 
 /* Event link in notes */

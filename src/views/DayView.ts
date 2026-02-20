@@ -84,6 +84,9 @@ export class DayView {
         if (e.type === "todo") chip.addClass("calendar-event-todo");
         if (e.completed) chip.addClass("calendar-event-completed");
         if (e.id === this.callbacks.selectedEventId) chip.addClass("calendar-event-selected");
+        if (e.type === "todo") {
+          chip.createSpan("calendar-event-todo-icon").setText(e.completed ? "✅" : "⭕");
+        }
         const titleSpan = chip.createSpan();
         titleSpan.setText(e.title);
         if ((e.notePaths ?? []).length > 0) {
@@ -184,6 +187,9 @@ export class DayView {
       titleWrap.style.alignItems = "center";
       titleWrap.style.gap = "2px";
       titleWrap.style.minWidth = "0";
+      if (e.type === "todo") {
+        titleWrap.createSpan("calendar-event-todo-icon").setText(e.completed ? "✅" : "⭕");
+      }
       if ((e.notePaths ?? []).length > 0) {
         const linkIcon = titleWrap.createSpan("calendar-event-note-link");
         linkIcon.setAttribute("aria-label", "打开关联笔记");
