@@ -1,7 +1,7 @@
 /* Obsidian Calendar Plugin */
 
 .obsidian-calendar-container {
-  padding: 1rem;
+  padding: 1rem 1rem 1rem 0;
   height: 100%;
   overflow: auto;
   display: flex;
@@ -13,12 +13,26 @@
   min-height: 200px;
 }
 
+.obsidian-calendar-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+  padding-left: 1rem;
+}
+
+.obsidian-calendar-time {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 .obsidian-calendar-toolbar {
   display: flex;
   gap: 0.5rem;
   margin-bottom: 1rem;
   flex-wrap: wrap;
   align-items: center;
+  padding-left: 1rem;
 }
 
 .obsidian-calendar-toolbar button {
@@ -303,6 +317,15 @@
 .calendar-day-event-bar-title {
   font-size: 0.8rem;
   font-weight: 500;
+  overflow: hidden;
+}
+
+.calendar-event-bar-title-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .calendar-day-event-bar-time {
@@ -385,7 +408,7 @@
   overflow-x: auto;
   display: flex;
   flex-direction: column;
-  padding: 0 0.5rem;
+  padding: 0 0.5rem 0 0;
   scrollbar-gutter: stable;
 }
 
@@ -505,6 +528,12 @@
 .calendar-week-event-bar-title {
   font-size: 0.7rem;
   overflow: hidden;
+}
+
+.calendar-week-event-bar-title .calendar-event-bar-title-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -591,7 +620,7 @@
 }
 
 .calendar-event-note-link {
-  margin-left: 4px;
+  margin-right: 4px;
   opacity: 0.7;
   cursor: pointer;
   display: inline-flex;

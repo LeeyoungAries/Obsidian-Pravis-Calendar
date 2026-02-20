@@ -28,6 +28,7 @@ export class CalendarView extends ItemView {
   private scrollToTodayInWeek = false;
   private undoHandler: ReturnType<Scope["register"]> | null = null;
   private redoHandler: ReturnType<Scope["register"]> | null = null;
+  private timeTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(
     leaf: WorkspaceLeaf,
@@ -78,6 +79,7 @@ export class CalendarView extends ItemView {
 
   async onClose(): Promise<void> {
     this.eventStore.off("change", this.changeHandler);
+    if (this.timeTimer) clearInterval(this.timeTimer);
     if (this.scope && this.undoHandler) this.scope.unregister(this.undoHandler);
     if (this.scope && this.redoHandler) this.scope.unregister(this.redoHandler);
   }
@@ -123,6 +125,18 @@ export class CalendarView extends ItemView {
     const wasWeekView = !!scrollWrapper;
 
     this.containerEl.empty();
+
+    const header = this.containerEl.createDiv("obsidian-calendar-header");
+    const timeEl = header.createSpan("obsidian-calendar-time");
+    const updateTime = () => {
+      const now = new Date();
+      timeEl.setText(
+        `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, "0")}/${String(now.getDate()).padStart(2, "0")} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`
+      );
+    };
+    updateTime();
+    if (this.timeTimer) clearInterval(this.timeTimer);
+    this.timeTimer = setInterval(updateTime, 1000);
 
     const toolbar = this.containerEl.createDiv("obsidian-calendar-toolbar");
 

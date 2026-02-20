@@ -183,7 +183,7 @@ export class DayView {
       titleWrap.style.display = "flex";
       titleWrap.style.alignItems = "center";
       titleWrap.style.gap = "2px";
-      titleWrap.createSpan().setText(e.title);
+      titleWrap.style.minWidth = "0";
       if ((e.notePaths ?? []).length > 0) {
         const linkIcon = titleWrap.createSpan("calendar-event-note-link");
         linkIcon.setAttribute("aria-label", "打开关联笔记");
@@ -194,6 +194,8 @@ export class DayView {
           this.callbacks.onNoteLinkClick?.(e, ev);
         });
       }
+      const titleText = titleWrap.createSpan("calendar-event-bar-title-text");
+      titleText.setText(e.title);
       const timeStr = `${start.getHours()}:${String(start.getMinutes()).padStart(2, "0")}-${end.getHours()}:${String(end.getMinutes()).padStart(2, "0")}`;
       bar.createDiv("calendar-day-event-bar-time").setText(timeStr);
       bar.addEventListener("click", (ev) => {
