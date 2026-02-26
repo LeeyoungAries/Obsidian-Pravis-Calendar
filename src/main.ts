@@ -10,6 +10,7 @@ const DEFAULT_SETTINGS: PluginSettings = {
   weekStartDay: 0,
   defaultView: "month",
   openOnStartup: false,
+  openInCenter: false,
 };
 
 export default class CalendarPlugin extends Plugin {
@@ -75,8 +76,10 @@ export default class CalendarPlugin extends Plugin {
   }
 
   private async openCalendarOnStartup(): Promise<void> {
-    const leaf = this.app.workspace.getLeaf(false);
-    await leaf.setViewState({ type: VIEW_TYPE_CALENDAR, active: true });
+    const target = this.settings.openInCenter
+      ? this.app.workspace.getLeaf()
+      : this.app.workspace.getRightLeaf(false) ?? this.app.workspace.getLeaf();
+    await target.setViewState({ type: VIEW_TYPE_CALENDAR, active: true });
   }
 
   private async openCalendarToEvent(eventId: string): Promise<void> {
@@ -95,7 +98,9 @@ export default class CalendarPlugin extends Plugin {
     const { workspace } = this.app;
     let leaf = workspace.getLeavesOfType(VIEW_TYPE_CALENDAR)[0];
     if (!leaf) {
-      const target = workspace.getRightLeaf(false) ?? workspace.getLeaf();
+      const target = this.settings.openInCenter
+        ? workspace.getLeaf()
+        : workspace.getRightLeaf(false) ?? workspace.getLeaf();
       await target.setViewState({ type: VIEW_TYPE_CALENDAR, active: true });
     } else {
       workspace.revealLeaf(leaf);
