@@ -39,9 +39,11 @@ export class EventModal extends Modal {
     const base = this.options.initialDate ? new Date(this.options.initialDate) : new Date();
     const now = new Date(base);
     if (this.options.initialDate && !ev) {
-      now.setHours(9, 0, 0, 0);
+      // 创建模式：使用当前真实时间，结束时间 = 当前时间 + 30 分钟
+      const realNow = new Date();
+      now.setTime(realNow.getTime());
     }
-    const defaultEnd = new Date(now.getTime() + 60 * 60 * 1000);
+    const defaultEnd = new Date(now.getTime() + 30 * 60 * 1000);
 
     const form = contentEl.createDiv("calendar-event-form");
 

@@ -640,16 +640,41 @@
   opacity: 1;
 }
 
-/* Responsive */
+/* ========== iPhone / 移动端布局优化（不影响 macOS 桌面端）========== */
 @media (max-width: 600px) {
+  /* 顶部安全区：避免状态栏遮挡「日/周/月」切换按钮 */
+  .obsidian-calendar-container {
+    padding-top: calc(0.75rem + env(safe-area-inset-top, 0px));
+  }
+
   .obsidian-calendar-toolbar {
     flex-direction: column;
     align-items: stretch;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
   }
+
+  /* 日/周/月按钮：增大可点击区域，避免被遮挡 */
+  .calendar-view-group {
+    flex-shrink: 0;
+  }
+  .calendar-view-group button {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.4rem 0.6rem;
+    font-size: 1rem;
+  }
+
   .calendar-nav-group {
     justify-content: center;
   }
   .calendar-filter {
     justify-content: center;
+  }
+
+  /* 今天 / 创建事件：移动端稍紧凑 */
+  .obsidian-calendar-toolbar > button {
+    min-height: 40px;
+    padding: 0.4rem 0.75rem;
   }
 }
