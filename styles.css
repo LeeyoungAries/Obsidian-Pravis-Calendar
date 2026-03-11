@@ -298,10 +298,14 @@
   position: absolute;
   left: 4px;
   right: 4px;
-  border-radius: 4px;
+  border-radius: 6px;
   border-left: 3px solid var(--event-color, var(--interactive-accent));
   background: color-mix(in srgb, var(--event-color, var(--interactive-accent)) 22%, var(--background-secondary));
   padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  box-sizing: border-box;
   overflow: hidden;
   cursor: pointer;
 }
@@ -313,6 +317,7 @@
 .calendar-day-event-bar-title {
   font-size: 0.8rem;
   font-weight: 500;
+  line-height: 1.2;
   overflow: hidden;
 }
 
@@ -326,6 +331,7 @@
 
 .calendar-day-event-bar-time {
   font-size: 0.7rem;
+  line-height: 1.15;
   color: var(--text-muted);
 }
 
@@ -509,10 +515,14 @@
   position: absolute;
   left: 2px;
   right: 2px;
-  border-radius: 2px;
+  border-radius: 6px;
   border-left: 3px solid var(--event-color, var(--interactive-accent));
   background: color-mix(in srgb, var(--event-color, var(--interactive-accent)) 22%, var(--background-secondary));
   padding: 2px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  box-sizing: border-box;
   overflow: hidden;
   cursor: pointer;
 }
@@ -523,7 +533,25 @@
 
 .calendar-week-event-bar-title {
   font-size: 0.7rem;
+  line-height: 1.2;
   overflow: hidden;
+}
+
+.calendar-day-event-bar.calendar-event-compact,
+.calendar-week-event-bar.calendar-event-compact {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+.calendar-day-event-bar.calendar-event-compact .calendar-day-event-bar-time,
+.calendar-week-event-bar.calendar-event-compact .calendar-day-event-bar-time {
+  display: none;
+}
+
+.calendar-day-event-bar.calendar-event-compact .calendar-day-event-bar-title,
+.calendar-week-event-bar.calendar-event-compact .calendar-week-event-bar-title {
+  font-size: 0.72rem;
+  line-height: 1.1;
 }
 
 .calendar-week-event-bar-title .calendar-event-bar-title-text {

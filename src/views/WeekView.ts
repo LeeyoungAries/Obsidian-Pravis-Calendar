@@ -202,10 +202,13 @@ export class WeekView {
         const start = new Date(e.start);
         const end = new Date(e.end);
         const topPx = (start.getHours() + start.getMinutes() / 60) * SLOT_HEIGHT;
-        const durationHours = (end.getTime() - start.getTime()) / (60 * 60 * 1000);
-        const heightPx = Math.max(durationHours * SLOT_HEIGHT, 30);
+        const durationMs = end.getTime() - start.getTime();
+        const durationHours = durationMs / (60 * 60 * 1000);
+        const durationMin = durationMs / (60 * 1000);
+        const heightPx = Math.max(durationHours * SLOT_HEIGHT, 20);
 
         const bar = eventsLayer.createDiv("calendar-week-event-bar");
+        if (durationMin <= 45) bar.addClass("calendar-event-compact");
         if (e.type === "todo") bar.addClass("calendar-event-todo");
         if (e.completed) bar.addClass("calendar-event-completed");
         if (e.id === this.callbacks.selectedEventId) bar.addClass("calendar-event-selected");

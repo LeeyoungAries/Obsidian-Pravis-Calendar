@@ -8,37 +8,74 @@ export interface LayoutResult {
   totalColumns: number;
 }
 
-function overlaps(aStart: number, aEnd: number, bStart: number, bEnd: number): boolean {
-  return aStart < bEnd && bStart < aEnd;
-}
-
 export function computeOverlapLayout<T extends TimedEvent>(
   events: T[]
 ): (T & LayoutResult)[] {
-  const sorted = [...events].sort(
-    (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime()
-  );
-  const columnEnds: number[] = [];
-  const result: (T & LayoutResult)[] = [];
+  type IndexedEvent = {
+    event: T;
+    index: number;
+    start: number;
+    end: number;
+  };
 
-  for (const e of sorted) {
-    const start = new Date(e.start).getTime();
-    const end = new Date(e.end).getTime();
+  if (events.length === 0) return [];
 
-    let col = 0;
-    while (col < columnEnds.length && columnEnds[col] > start) {
-      col++;
+  const sorted: IndexedEvent[] = events
+    .map((event, index) => ({
+      event,
+      index,
+      start: new Date(event.start).getTime(),
+      end: new Date(event.end).getTime(),
+    }))
+    .sort((a, b) => a.start - b.start || a.end - b.end);
+
+  const layoutByIndex = new Map<number, LayoutResult>();
+
+  const finalizeGroup = (group: IndexedEvent[]): void => {
+    if (group.length === 0) return;
+    const columnEnds: number[] = [];
+    const columnByIndex = new Map<number, number>();
+
+    group.forEach((item) => {
+      let col = 0;
+      while (col < columnEnds.length && columnEnds[col] > item.start) col++;
+      if (col >= columnEnds.length) columnEnds.push(item.end);
+      else columnEnds[col] = item.end;
+      columnByIndex.set(item.index, col);
+    });
+
+    const totalColumns = Math.max(columnEnds.length, 1);
+    group.forEach((item) => {
+      const column = columnByIndex.get(item.index) ?? 0;
+      layoutByIndex.set(item.index, { column, totalColumns });
+    });
+  };
+
+  let currentGroup: IndexedEvent[] = [];
+  let currentGroupMaxEnd = -Infinity;
+
+  for (const item of sorted) {
+    if (currentGroup.length === 0) {
+      currentGroup.push(item);
+      currentGroupMaxEnd = item.end;
+      continue;
     }
-    if (col >= columnEnds.length) {
-      columnEnds.push(end);
-    } else {
-      columnEnds[col] = end;
+
+    if (item.start < currentGroupMaxEnd) {
+      currentGroup.push(item);
+      currentGroupMaxEnd = Math.max(currentGroupMaxEnd, item.end);
+      continue;
     }
-    const overlapCount = sorted.filter(
-      (o) => overlaps(start, end, new Date(o.start).getTime(), new Date(o.end).getTime())
-    ).length;
-    result.push({ ...e, column: col, totalColumns: overlapCount });
+
+    finalizeGroup(currentGroup);
+    currentGroup = [item];
+    currentGroupMaxEnd = item.end;
   }
 
-  return result;
+  finalizeGroup(currentGroup);
+
+  return sorted.map((item) => {
+    const layout = layoutByIndex.get(item.index) ?? { column: 0, totalColumns: 1 };
+    return { ...item.event, ...layout };
+  });
 }
