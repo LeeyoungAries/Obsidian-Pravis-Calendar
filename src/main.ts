@@ -76,10 +76,14 @@ export default class CalendarPlugin extends Plugin {
   }
 
   private async openCalendarOnStartup(): Promise<void> {
-    const target = this.settings.openInCenter
-      ? this.app.workspace.getLeaf()
-      : this.app.workspace.getRightLeaf(false) ?? this.app.workspace.getLeaf();
-    await target.setViewState({ type: VIEW_TYPE_CALENDAR, active: true });
+    // 关闭多余的日历窗口（例如上次工作区布局恢复出来的重复面板），只保留一个
+    this.dedupeCalendarLeaves();
+    await this.activateView();
+  }
+
+  private dedupeCalendarLeaves(): void {
+    const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_CALENDAR);
+    leaves.slice(1).forEach((leaf) => leaf.detach());
   }
 
   private async openCalendarToEvent(eventId: string): Promise<void> {
@@ -96,6 +100,7 @@ export default class CalendarPlugin extends Plugin {
 
   async activateView(): Promise<void> {
     const { workspace } = this.app;
+    this.dedupeCalendarLeaves();
     let leaf = workspace.getLeavesOfType(VIEW_TYPE_CALENDAR)[0];
     if (!leaf) {
       const target = this.settings.openInCenter
