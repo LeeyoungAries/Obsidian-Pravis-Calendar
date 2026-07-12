@@ -39,7 +39,7 @@ export class EventStore {
     try {
       const content = await this.app.vault.adapter.read(DATA_PATH);
       const parsed = JSON.parse(content) as Partial<CalendarData>;
-      const rawEvents = (parsed.events ?? []) as Array<Record<string, unknown>>;
+      const rawEvents = (parsed.events ?? []) as unknown as Array<Record<string, unknown>>;
       const events = rawEvents.filter((e) => e?.id && e?.start && e?.end).map((e) => {
         const notePaths = Array.isArray(e.notePaths)
           ? (e.notePaths as string[]).filter((p) => typeof p === "string" && p.trim())

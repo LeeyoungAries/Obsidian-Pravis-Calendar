@@ -1,16 +1,15 @@
-import { Plugin } from "obsidian";
+import { addIcon, Plugin } from "obsidian";
 import type { PluginSettings } from "./types";
 import { EventStore } from "./store/EventStore";
 import { CalendarStore } from "./store/CalendarStore";
 import { CalendarView, VIEW_TYPE_CALENDAR } from "./views/CalendarView";
 import { CalendarSettingTab } from "./settings";
 import { createEventLinkProcessor } from "./eventLinkProcessor";
+import { PRAVIS_CALENDAR_ICON, PRAVIS_CALENDAR_ICON_SVG } from "./constants/icons";
 
 const DEFAULT_SETTINGS: PluginSettings = {
   weekStartDay: 0,
   defaultView: "month",
-  openOnStartup: false,
-  openInCenter: false,
 };
 
 export default class CalendarPlugin extends Plugin {
@@ -20,6 +19,7 @@ export default class CalendarPlugin extends Plugin {
 
   async onload(): Promise<void> {
     await this.loadSettings();
+    addIcon(PRAVIS_CALENDAR_ICON, PRAVIS_CALENDAR_ICON_SVG);
     this.eventStore = new EventStore(this.app);
     this.calendarStore = new CalendarStore(this.eventStore);
     await this.eventStore.load();
@@ -28,13 +28,13 @@ export default class CalendarPlugin extends Plugin {
       return new CalendarView(leaf, this.eventStore, this.calendarStore, this.settings);
     });
 
-    this.addRibbonIcon("calendar", "打开日历", () => {
+    this.addRibbonIcon(PRAVIS_CALENDAR_ICON, "打开 Pravis Calendar", () => {
       this.activateView();
     });
 
     this.addCommand({
       id: "open-calendar",
-      name: "打开日历",
+      name: "打开 Pravis Calendar",
       callback: () => this.activateView(),
     });
 
@@ -70,15 +70,20 @@ export default class CalendarPlugin extends Plugin {
       createEventLinkProcessor((eventId) => this.openCalendarToEvent(eventId))
     );
 
-    if (this.settings.openOnStartup) {
-      this.app.workspace.onLayoutReady(() => this.openCalendarOnStartup());
-    }
+    this.app.workspace.onLayoutReady(() => this.prepareCalendarSidebarTab());
   }
 
-  private async openCalendarOnStartup(): Promise<void> {
+  private async prepareCalendarSidebarTab(): Promise<void> {
     // 关闭多余的日历窗口（例如上次工作区布局恢复出来的重复面板），只保留一个
     this.dedupeCalendarLeaves();
-    await this.activateView();
+    const existingLeaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_CALENDAR)[0];
+    if (existingLeaf) {
+      await existingLeaf.setViewState({ ...existingLeaf.getViewState(), active: false });
+      return;
+    }
+
+    const leaf = this.app.workspace.getRightLeaf(false);
+    await leaf?.setViewState({ type: VIEW_TYPE_CALENDAR, active: false });
   }
 
   private dedupeCalendarLeaves(): void {
@@ -103,9 +108,7 @@ export default class CalendarPlugin extends Plugin {
     this.dedupeCalendarLeaves();
     let leaf = workspace.getLeavesOfType(VIEW_TYPE_CALENDAR)[0];
     if (!leaf) {
-      const target = this.settings.openInCenter
-        ? workspace.getLeaf()
-        : workspace.getRightLeaf(false) ?? workspace.getLeaf();
+      const target = workspace.getRightLeaf(false) ?? workspace.getLeaf();
       await target.setViewState({ type: VIEW_TYPE_CALENDAR, active: true });
     } else {
       workspace.revealLeaf(leaf);

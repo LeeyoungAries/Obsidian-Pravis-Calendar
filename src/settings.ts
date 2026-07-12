@@ -54,26 +54,6 @@ export class CalendarSettingTab extends PluginSettingTab {
       await this.saveSettings(s);
     });
 
-    const openOnStartupEl = containerEl.createDiv("setting-item");
-    const openOnStartupLabel = openOnStartupEl.createEl("label");
-    const openOnStartupCheck = openOnStartupLabel.createEl("input", { type: "checkbox" });
-    openOnStartupCheck.checked = settings.openOnStartup ?? false;
-    openOnStartupLabel.appendText(" 启动时在首页打开日历");
-    openOnStartupCheck.addEventListener("change", async () => {
-      const s = { ...this.getSettings(), openOnStartup: openOnStartupCheck.checked };
-      await this.saveSettings(s);
-    });
-
-    const openInCenterEl = containerEl.createDiv("setting-item");
-    const openInCenterLabel = openInCenterEl.createEl("label");
-    const openInCenterCheck = openInCenterLabel.createEl("input", { type: "checkbox" });
-    openInCenterCheck.checked = settings.openInCenter ?? false;
-    openInCenterLabel.appendText(" 在主标签页打开（中间区域，非侧边栏）");
-    openInCenterCheck.addEventListener("change", async () => {
-      const s = { ...this.getSettings(), openInCenter: openInCenterCheck.checked };
-      await this.saveSettings(s);
-    });
-
     containerEl.createEl("h3", { text: "日历管理" });
     const calendars = this.calendarStore.getCalendars();
     calendars.forEach((cal) => {

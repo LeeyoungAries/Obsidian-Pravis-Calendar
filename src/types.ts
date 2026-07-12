@@ -29,6 +29,4 @@ export type ViewMode = "day" | "week" | "month";
 export interface PluginSettings {
   weekStartDay: number;
   defaultView: ViewMode;
-  openOnStartup: boolean;
-  openInCenter: boolean;
 }

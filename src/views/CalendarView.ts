@@ -6,9 +6,11 @@ import { MonthView } from "./MonthView";
 import { DayView } from "./DayView";
 import { WeekView } from "./WeekView";
 import { EventModal } from "../components/EventModal";
+import type { EventModalOptions } from "../components/EventModal";
 import { DayEventsModal } from "../components/DayEventsModal";
 import { addMonths, addDays, getWeekDays } from "../utils/date";
 import { getLunarString } from "../utils/lunar";
+import { PRAVIS_CALENDAR_ICON } from "../constants/icons";
 
 const MONTH_NAMES = ["一月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "十一月", "十二月"];
 
@@ -18,7 +20,7 @@ export class CalendarView extends ItemView {
   private eventStore: EventStore;
   private calendarStore: CalendarStore;
   private settings: PluginSettings;
-  private containerEl: HTMLElement;
+  private rootEl: HTMLElement;
   private monthView: MonthView | null = null;
   private dayView: DayView | null = null;
   private weekView: WeekView | null = null;
@@ -41,7 +43,7 @@ export class CalendarView extends ItemView {
     this.settings = settings;
     this.currentDate = new Date();
     this.viewMode = settings.defaultView;
-    this.containerEl = this.contentEl.createDiv("obsidian-calendar-container");
+    this.rootEl = this.contentEl.createDiv("obsidian-calendar-container");
     this.scope = new Scope(this.app.scope);
     this.undoHandler = this.scope.register(["Mod"], "z", () => {
       if (this.eventStore.canUndo()) {
@@ -64,11 +66,11 @@ export class CalendarView extends ItemView {
   }
 
   getDisplayText(): string {
-    return "日历";
+    return "Pravis Calendar";
   }
 
   getIcon(): string {
-    return "calendar";
+    return PRAVIS_CALENDAR_ICON;
   }
 
   async onOpen(): Promise<void> {
@@ -102,7 +104,7 @@ export class CalendarView extends ItemView {
     else menu.showAtPosition({ x: 0, y: 0 });
   }
 
-  private openEventModal(mode: "create" | "edit", initialDate?: Date, event?: Parameters<typeof EventModal>[2]["event"]): void {
+  private openEventModal(mode: "create" | "edit", initialDate?: Date, event?: EventModalOptions["event"]): void {
     this.eventStore.off("change", this.changeHandler);
     const modal = new EventModal(this.app, this.eventStore, this.calendarStore, { mode, initialDate, event });
     modal.afterClose = () => {
@@ -113,7 +115,7 @@ export class CalendarView extends ItemView {
   }
 
   private render(): void {
-    const oldContentArea = this.containerEl.querySelector(".calendar-content-area");
+    const oldContentArea = this.rootEl.querySelector(".calendar-content-area");
     const scrollWrapper = oldContentArea?.querySelector(".calendar-week-scroll-wrapper");
     const savedScrollTop = (oldContentArea as HTMLElement)?.scrollTop ?? 0;
     const savedScrollLeft = (oldContentArea as HTMLElement)?.scrollLeft ?? 0;
@@ -122,9 +124,9 @@ export class CalendarView extends ItemView {
     const wasDayView = !!oldContentArea?.querySelector(".calendar-day-wrapper");
     const wasWeekView = !!scrollWrapper;
 
-    this.containerEl.empty();
+    this.rootEl.empty();
 
-    const toolbar = this.containerEl.createDiv("obsidian-calendar-toolbar");
+    const toolbar = this.rootEl.createDiv("obsidian-calendar-toolbar");
 
     const viewGroup = toolbar.createDiv("calendar-view-group");
     (["day", "week", "month"] as ViewMode[]).forEach((mode) => {
@@ -173,7 +175,7 @@ export class CalendarView extends ItemView {
 
     this.updateNavTitle(navTitle);
 
-    const contentArea = this.containerEl.createDiv("calendar-content-area");
+    const contentArea = this.rootEl.createDiv("calendar-content-area");
 
     if (this.viewMode === "month") {
       const monthContainer = contentArea.createDiv("calendar-month-wrapper");
@@ -284,7 +286,7 @@ export class CalendarView extends ItemView {
     const defaultScrollTop = DEFAULT_SCROLL_START_HOUR * SLOT_HEIGHT;
 
     requestAnimationFrame(() => {
-      const newContentArea = this.containerEl.querySelector(".calendar-content-area");
+      const newContentArea = this.rootEl.querySelector(".calendar-content-area");
       const newScrollWrapper = newContentArea?.querySelector(".calendar-week-scroll-wrapper");
       if (this.viewMode === "day" && newContentArea instanceof HTMLElement) {
         if (wasDayView) {
