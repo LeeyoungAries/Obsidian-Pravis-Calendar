@@ -4,6 +4,7 @@ import { generateEventId, generateCalendarId } from "../utils/id";
 import { DEFAULT_CALENDAR_COLOR } from "../constants/colors";
 
 const DATA_PATH = ".obsidian/pravis-calendar-events.json";
+const BACKUP_DIR = ".obsidian/pravis-calendar-backups";
 const SAVE_DEBOUNCE_MS = 300;
 const HISTORY_MAX_SIZE = 30;
 
@@ -75,6 +76,19 @@ export class EventStore {
     } catch (err) {
       console.error("Calendar plugin: save failed", err);
     }
+  }
+
+  async createManualBackup(): Promise<string> {
+    await this.save();
+
+    if (!(await this.app.vault.adapter.exists(BACKUP_DIR))) {
+      await this.app.vault.adapter.mkdir(BACKUP_DIR);
+    }
+
+    const timestamp = this.formatBackupTimestamp(new Date());
+    const path = `${BACKUP_DIR}/pravis-calendar-backup-${timestamp}.json`;
+    await this.app.vault.adapter.write(path, JSON.stringify(this.data, null, 2));
+    return path;
   }
 
   on(ev: "change", handler: ChangeHandler): void {
@@ -193,6 +207,13 @@ export class EventStore {
     if (this.undoStack.length > HISTORY_MAX_SIZE) {
       this.undoStack = this.undoStack.slice(-HISTORY_MAX_SIZE);
     }
+  }
+
+  private formatBackupTimestamp(date: Date): string {
+    const pad = (value: number): string => String(value).padStart(2, "0");
+    const datePart = [date.getFullYear(), pad(date.getMonth() + 1), pad(date.getDate())].join("-");
+    const timePart = [pad(date.getHours()), pad(date.getMinutes()), pad(date.getSeconds())].join("-");
+    return `${datePart}_${timePart}`;
   }
 
   getCalendars(): Calendar[] {

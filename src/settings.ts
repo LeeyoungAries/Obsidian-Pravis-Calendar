@@ -1,12 +1,14 @@
-import { PluginSettingTab, type App, type Plugin } from "obsidian";
+import { Notice, PluginSettingTab, type App, type Plugin } from "obsidian";
 import type { PluginSettings, ViewMode } from "./types";
 import type { CalendarStore } from "./store/CalendarStore";
+import type { EventStore } from "./store/EventStore";
 import { CALENDAR_COLORS } from "./constants/colors";
 
 export class CalendarSettingTab extends PluginSettingTab {
   constructor(
     app: App,
     private plugin: Plugin,
+    private eventStore: EventStore,
     private calendarStore: CalendarStore,
     private getSettings: () => PluginSettings,
     private saveSettings: (s: PluginSettings) => Promise<void>
@@ -52,6 +54,30 @@ export class CalendarSettingTab extends PluginSettingTab {
     viewSelect.addEventListener("change", async () => {
       const s = { ...this.getSettings(), defaultView: viewSelect.value as ViewMode };
       await this.saveSettings(s);
+    });
+
+    containerEl.createEl("h3", { text: "数据备份" });
+    const backupEl = containerEl.createDiv("setting-item");
+    const backupInfo = backupEl.createDiv("setting-item-info");
+    backupInfo.createEl("div", { text: "手动备份日历数据" });
+    backupInfo.createEl("div", {
+      text: "创建带当前时间的备份文件，保存在 .obsidian/pravis-calendar-backups/。",
+      cls: "setting-item-description",
+    });
+    const backupButton = backupEl.createEl("button", { text: "立即备份", cls: "mod-cta" });
+    backupButton.addEventListener("click", async () => {
+      backupButton.disabled = true;
+      backupButton.setText("正在备份...");
+      try {
+        const path = await this.eventStore.createManualBackup();
+        new Notice(`Pravis Calendar 已备份：${path}`);
+      } catch (err) {
+        console.error("Calendar plugin: backup failed", err);
+        new Notice("Pravis Calendar 备份失败，请检查 Vault 写入权限。");
+      } finally {
+        backupButton.disabled = false;
+        backupButton.setText("立即备份");
+      }
     });
 
     containerEl.createEl("h3", { text: "日历管理" });

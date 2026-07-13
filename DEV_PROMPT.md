@@ -31,7 +31,7 @@ Obsidian 日历插件，迁移 iOS 日历核心能力。以事件为中心，支
 
 # 产出
 - 可 npm run build 成功
-- 复制 main.js、manifest.json、styles.css 到 vault/.obsidian/plugins/obsidian-pravis-calendar/ 后可加载
+- 复制 main.js、manifest.json、styles.css 到 vault/.obsidian/plugins/pravis-calendar/ 后可加载
 - 侧边栏可打开日历面板
 - 可创建事件并持久化到 JSON
 ```
